@@ -504,8 +504,16 @@ editProductScene.action('confirm_delete', async (ctx) => {
     }
     
   } catch (error) {
-    console.error('Delete product error:', error);
-    await ctx.editMessageText('❌ Ma\'lumotlar bazasida xatolik');
+    console.error('🔥 DETAILED DELETE ERROR:', {
+      message: error.message,
+      stack: error.stack,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      product: ctx.scene.state.product,
+      productId: ctx.scene.state.product?.id
+    });
+    await ctx.editMessageText('❌ Ma\'lumotlar bazasida xatolik: ' + error.message);
   } finally {
     ctx.scene.leave();
   }

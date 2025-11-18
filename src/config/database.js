@@ -155,13 +155,18 @@ const db = {
         .from('products')
         .delete()
         .eq('id', productId)
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
-      return data;
+      return data && data.length > 0 ? data[0] : true;
     } catch (error) {
-      console.error('Database error - deleteProduct:', error.message);
+      console.error('🔥 Database error - deleteProduct:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        productId: productId
+      });
       throw error;
     }
   },
