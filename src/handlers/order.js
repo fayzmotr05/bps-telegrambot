@@ -249,8 +249,21 @@ async function createOrder(ctx) {
     }
 
   } catch (error) {
-    console.error('Create order error:', error);
-    await ctx.reply('❌ Xatolik yuz berdi');
+    console.error('🔥 DETAILED CREATE ORDER ERROR:', {
+      message: error.message,
+      stack: error.stack,
+      orderData: {
+        user_id: ctx.from.id,
+        product_id: ctx.scene.state?.product?.id,
+        quantity: ctx.scene.state?.quantity,
+        total_price: ctx.scene.state?.totalPrice,
+        customer_name: ctx.scene.state?.customerName,
+        customer_phone: ctx.scene.state?.customerPhone,
+        notes: ctx.scene.state?.notes
+      },
+      sceneState: ctx.scene.state
+    });
+    await ctx.reply('❌ Buyurtma yaratishda xatolik: ' + error.message);
   } finally {
     ctx.scene.leave();
   }
