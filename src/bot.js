@@ -157,7 +157,7 @@ async function showMainMenu(ctx, userLanguage = null) {
       ],
       [
         { 
-          text: '🌐 Mini App', 
+          text: '📱 Catalog', 
           web_app: { 
             url: process.env.MINI_APP_URL || 'https://your-mini-app.vercel.app' 
           }
