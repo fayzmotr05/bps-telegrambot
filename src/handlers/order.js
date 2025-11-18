@@ -224,7 +224,7 @@ async function createOrder(ctx) {
           text: language === 'uz' ? '📱 Katalogga qaytish' :
                 language === 'ru' ? '📱 Вернуться в каталог' :
                 '📱 Back to Catalog',
-          web_app: { url: process.env.MINI_APP_URL || 'https://bps-telegrambot-final.vercel.app' }
+          web_app: { url: process.env.MINI_APP_URL || 'https://bps-telegrambot.vercel.app' }
         }],
         [{
           text: language === 'uz' ? '🏠 Asosiy menyu' :
