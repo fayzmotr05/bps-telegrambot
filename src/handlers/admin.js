@@ -107,7 +107,16 @@ async function showAdminOrders(ctx) {
         const productName = order.products?.name_uz || 'Mahsulot nomi';
         const customerName = order.customer_name || 'Unknown';
         
+        // Format date and time
+        const orderDate = new Date(order.created_at);
+        const dateStr = orderDate.toLocaleDateString('uz-UZ');
+        const timeStr = orderDate.toLocaleTimeString('uz-UZ', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+        
         message += `${index + 1}. #${order.id}\n`;
+        message += `📅 ${dateStr} ${timeStr}\n`;
         message += `👤 ${customerName}\n`;
         message += `📦 ${productName}\n`;
         message += `🔢 ${order.quantity} dona\n`;
@@ -115,7 +124,7 @@ async function showAdminOrders(ctx) {
         message += `📞 ${order.customer_phone}\n\n`;
 
         buttons.push([{
-          text: `✅ Buyurtma #${order.id}`,
+          text: `✅ #${order.id} - ${dateStr} ${timeStr}`,
           callback_data: `admin_order_${order.id}`
         }]);
       });
