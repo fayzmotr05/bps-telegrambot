@@ -190,37 +190,31 @@ function App() {
         return {
           title: '🏪 BPS Каталог',
           greeting: user ? `Привет, ${user.first_name}! 👋` : null,
-          devMode: '⚠️ Режим разработки - функции Telegram отключены',
           loading: 'Загрузка товаров...',
           error: 'Произошла ошибка',
           retry: 'Повторить',
           noProducts: 'Товары не найдены',
-          refresh: 'Обновить',
-          devNote: 'Режим разработки: Откройте в Telegram для полного функционала'
+          refresh: 'Обновить'
         };
       case 'en':
         return {
           title: '🏪 BPS Catalogue',
           greeting: user ? `Hello, ${user.first_name}! 👋` : null,
-          devMode: '⚠️ Development mode - Telegram features disabled',
           loading: 'Loading products...',
           error: 'An error occurred',
           retry: 'Retry',
           noProducts: 'No products found',
-          refresh: 'Refresh',
-          devNote: 'Development Mode: Open in Telegram to see Mini App features'
+          refresh: 'Refresh'
         };
       default:
         return {
           title: '🏪 BPS Katalog',
           greeting: user ? `Assalomu alaykum, ${user.first_name}! 👋` : null,
-          devMode: '⚠️ Development mode - Telegram funksiyalari o\'chirilgan',
           loading: 'Mahsulotlar yuklanmoqda...',
           error: 'Xatolik yuz berdi',
           retry: 'Qayta urinish',
           noProducts: 'Mahsulotlar topilmadi',
-          refresh: 'Yangilash',
-          devNote: 'Development Mode: Telegram Mini App funksiyalarini ko\'rish uchun Telegramda oching'
+          refresh: 'Yangilash'
         };
     }
   };
@@ -350,14 +344,6 @@ function App() {
         userId={user?.id}
       />
 
-      {/* Development Info */}
-      {!user && (
-        <div className="fixed bottom-4 left-4 right-4 bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 rounded-lg p-3 shadow-lg">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            <strong>Development Mode:</strong> {labels.devNote}
-          </p>
-        </div>
-      )}
     </div>
   );
 }

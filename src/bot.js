@@ -176,7 +176,7 @@ async function showMainMenu(ctx, userLanguage = null) {
         { 
           text: getMessage('mainMenu.catalog', language), 
           web_app: { 
-            url: process.env.MINI_APP_URL || 'https://your-mini-app.vercel.app' 
+            url: process.env.MINI_APP_URL || 'https://bps-telegrambot-final.vercel.app' 
           }
         }
       ],
