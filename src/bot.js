@@ -15,7 +15,7 @@ const { feedbackScene, startFeedback } = require('./handlers/feedback');
 const { showAdminPanel, showAdminProducts, showAdminOrders, showAdminFeedback, showAdminStats } = require('./handlers/admin');
 const { addProductScene, editProductScene, startAddProduct, startEditProduct } = require('./handlers/admin-products');
 const { showOrderDetails, updateOrderStatus } = require('./handlers/admin-orders');
-const { showFeedbackDetails, markFeedbackAsRead, startFeedbackResponse } = require('./handlers/admin-feedback');
+const { feedbackResponseScene, showFeedbackDetails, markFeedbackAsRead, startFeedbackResponse } = require('./handlers/admin-feedback');
 const { bulkStockScene, startBulkStock, initInventoryMonitoring } = require('./handlers/inventory');
 
 // Import notification system
@@ -31,7 +31,7 @@ if (!process.env.BOT_TOKEN) {
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // Create scene stage with all scenes
-const stage = new Scenes.Stage([orderScene, feedbackScene, addProductScene, editProductScene, bulkStockScene]);
+const stage = new Scenes.Stage([orderScene, feedbackScene, addProductScene, editProductScene, bulkStockScene, feedbackResponseScene]);
 
 // Middleware
 bot.use(session());
