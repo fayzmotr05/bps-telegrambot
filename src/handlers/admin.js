@@ -116,7 +116,7 @@ async function showAdminOrders(ctx) {
 
         buttons.push([{
           text: `✅ Buyurtma #${order.id}`,
-          callback_data: `order_${order.id}`
+          callback_data: `admin_order_${order.id}`
         }]);
       });
     } else {

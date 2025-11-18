@@ -304,7 +304,7 @@ bot.action(/^edit_product_(\d+)$/, async (ctx) => {
 });
 
 // Admin order management
-bot.action(/^order_(\d+)$/, async (ctx) => {
+bot.action(/^admin_order_(\d+)$/, async (ctx) => {
   const orderId = ctx.match[1];
   await showOrderDetails(ctx, orderId);
   await ctx.answerCbQuery();
