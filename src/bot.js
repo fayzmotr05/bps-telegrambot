@@ -1,4 +1,5 @@
 const { Telegraf, Scenes, session } = require('telegraf');
+const express = require('express');
 require('dotenv').config();
 
 // Import configuration
@@ -400,6 +401,33 @@ process.once('SIGINT', () => {
 process.once('SIGTERM', () => {
   console.log('🛑 Bot stopping...');
   bot.stop('SIGTERM');
+});
+
+// Create Express app for health checks
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Health check endpoint for Railway
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    bot: 'BPS Telegram Bot v2.0',
+    uptime: process.uptime()
+  });
+});
+
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: '🤖 BPS Telegram Bot is running!',
+    version: '2.0.0',
+    status: 'operational'
+  });
+});
+
+// Start Express server
+app.listen(PORT, () => {
+  console.log(`🌐 Health server running on port ${PORT}`);
 });
 
 // Start bot
