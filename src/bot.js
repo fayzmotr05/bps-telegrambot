@@ -173,14 +173,6 @@ async function showMainMenu(ctx, userLanguage = null) {
         { text: getMessage('mainMenu.order', language) }
       ],
       [
-        { 
-          text: getMessage('mainMenu.catalog', language), 
-          web_app: { 
-            url: process.env.MINI_APP_URL || 'https://bps-telegrambot.vercel.app' 
-          }
-        }
-      ],
-      [
         { text: getMessage('mainMenu.feedback', language) },
         { text: getMessage('mainMenu.contact', language) }
       ],
