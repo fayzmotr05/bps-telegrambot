@@ -51,10 +51,7 @@ async function showOrderDetails(ctx, orderId) {
       ]);
     }
 
-    // Phone call button
-    buttons.push([
-      { text: `📞 ${order.customer_phone}`, url: `tel:${order.customer_phone}` }
-    ]);
+    // Note: Phone number is already shown in the message above
 
     // Back button
     buttons.push([
