@@ -68,8 +68,15 @@ async function showOrderDetails(ctx, orderId) {
     });
 
   } catch (error) {
-    console.error('Show order details error:', error);
-    await ctx.reply('❌ Xatolik yuz berdi');
+    console.error('🔥 DETAILED ORDER DETAILS ERROR:', {
+      message: error.message,
+      stack: error.stack,
+      orderId: orderId,
+      orderType: typeof orderId,
+      adminUserId: process.env.ADMIN_USER_ID,
+      currentUserId: ctx.from.id
+    });
+    await ctx.reply('❌ Buyurtma ko\'rishda xatolik: ' + error.message);
   }
 }
 
@@ -94,8 +101,15 @@ async function updateOrderStatus(ctx, orderId, newStatus) {
     }
 
   } catch (error) {
-    console.error('Update order status error:', error);
-    await ctx.answerCbQuery('❌ Xatolik yuz berdi');
+    console.error('🔥 DETAILED ORDER STATUS UPDATE ERROR:', {
+      message: error.message,
+      stack: error.stack,
+      orderId: orderId,
+      newStatus: newStatus,
+      adminUserId: process.env.ADMIN_USER_ID,
+      currentUserId: ctx.from.id
+    });
+    await ctx.answerCbQuery('❌ Status yangilashda xatolik: ' + error.message);
   }
 }
 
