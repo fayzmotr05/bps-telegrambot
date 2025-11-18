@@ -52,6 +52,23 @@ async function isAdmin(userId) {
   return parseInt(userId) === parseInt(process.env.ADMIN_USER_ID);
 }
 
+// Admin command
+bot.command('admin', async (ctx) => {
+  try {
+    const userId = ctx.from.id;
+    
+    // Check admin access
+    if (parseInt(userId) !== parseInt(process.env.ADMIN_USER_ID)) {
+      return await ctx.reply('❌ Sizda admin huquqlari yo\'q | У вас нет прав администратора | You don\'t have admin rights');
+    }
+    
+    await showAdminPanel(ctx);
+  } catch (error) {
+    console.error('Admin command error:', error);
+    await ctx.reply('❌ Xatolik yuz berdi');
+  }
+});
+
 // Main commands
 bot.start(async (ctx) => {
   try {
@@ -157,7 +174,7 @@ async function showMainMenu(ctx, userLanguage = null) {
       ],
       [
         { 
-          text: '📱 Catalog', 
+          text: getMessage('mainMenu.catalog', language), 
           web_app: { 
             url: process.env.MINI_APP_URL || 'https://your-mini-app.vercel.app' 
           }
@@ -173,12 +190,7 @@ async function showMainMenu(ctx, userLanguage = null) {
       ]
     ];
 
-    // Add admin panel button for admin
-    if (adminUser) {
-      keyboard.push([
-        { text: getMessage('mainMenu.adminPanel', language) }
-      ]);
-    }
+    // Admin panel available via /admin command instead of button
 
     await ctx.reply('🏠 Asosiy menyu | Главное меню | Main Menu', {
       reply_markup: {

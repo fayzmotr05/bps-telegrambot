@@ -39,6 +39,11 @@ const messages = {
       ru: '📝 Заказ',
       en: '📝 Order'
     },
+    catalog: {
+      uz: '📱 Katalog',
+      ru: '📱 Каталог',
+      en: '📱 Catalog'
+    },
     feedback: {
       uz: '💬 Fikr bildirish',
       ru: '💬 Отзыв',
