@@ -151,6 +151,23 @@ const db = {
 
   async deleteProduct(productId) {
     try {
+      // First check if there are any orders for this product
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('product_id', productId);
+
+      if (ordersError) throw ordersError;
+
+      if (orders && orders.length > 0) {
+        // Product has orders, cannot delete - throw a custom error
+        const error = new Error(`Mahsulotni o'chirib bo'lmaydi: ${orders.length} ta buyurtma mavjud. Avval barcha buyurtmalarni hal qiling.`);
+        error.code = 'FOREIGN_KEY_CONSTRAINT';
+        error.orderCount = orders.length;
+        throw error;
+      }
+
+      // No orders exist, safe to delete
       const { data, error } = await supabase
         .from('products')
         .delete()
@@ -165,7 +182,8 @@ const db = {
         details: error.details,
         hint: error.hint,
         code: error.code,
-        productId: productId
+        productId: productId,
+        orderCount: error.orderCount
       });
       throw error;
     }

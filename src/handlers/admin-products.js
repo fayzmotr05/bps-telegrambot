@@ -326,7 +326,10 @@ editProductScene.enter(async (ctx) => {
         { text: '📸 Rasmi', callback_data: 'edit_photo' }
       ],
       [
-        { text: '🗑️ O\'chirish', callback_data: 'delete_product' },
+        { text: '🔴 Faolsizlashtirish', callback_data: 'deactivate_product' },
+        { text: '🗑️ O\'chirish', callback_data: 'delete_product' }
+      ],
+      [
         { text: '❌ Bekor qilish', callback_data: 'cancel_edit' }
       ]
     ];
@@ -472,6 +475,52 @@ editProductScene.action('delete_product', async (ctx) => {
   await ctx.answerCbQuery();
 });
 
+// Deactivate product
+editProductScene.action('deactivate_product', async (ctx) => {
+  try {
+    const product = ctx.scene.state.product;
+    
+    // Update product to inactive
+    const result = await db.updateProduct(product.id, { is_active: false });
+    
+    if (result) {
+      await ctx.editMessageText(
+        `🔴 MAHSULOT FAOLSIZLASHTIRILDI\n\n` +
+        `"${product.name_uz}" mahsuloti faolsizlashtirildi.\n\n` +
+        `💡 Bu mahsulot endi:\n` +
+        `❌ Yangi buyurtmalarda ko'rinmaydi\n` +
+        `✅ Mavjud buyurtmalar saqlanadi\n` +
+        `✅ Kerakli bo'lsa qayta faollashtirish mumkin`
+      );
+      
+      // Show admin products after delay
+      setTimeout(async () => {
+        const buttons = [[{
+          text: '📦 Mahsulotlar boshqaruvi',
+          callback_data: 'admin_products'
+        }]];
+        
+        await ctx.reply('Admin paneliga qaytish uchun tugmani bosing:', {
+          reply_markup: {
+            inline_keyboard: buttons
+          }
+        });
+      }, 2000);
+      
+    } else {
+      await ctx.editMessageText('❌ Mahsulotni faolsizlashtirishda xatolik');
+    }
+    
+  } catch (error) {
+    console.error('Deactivate product error:', error);
+    await ctx.editMessageText('❌ Ma\'lumotlar bazasida xatolik: ' + error.message);
+  } finally {
+    ctx.scene.leave();
+  }
+  
+  await ctx.answerCbQuery();
+});
+
 // Confirm deletion
 editProductScene.action('confirm_delete', async (ctx) => {
   try {
@@ -511,9 +560,23 @@ editProductScene.action('confirm_delete', async (ctx) => {
       hint: error.hint,
       code: error.code,
       product: ctx.scene.state.product,
-      productId: ctx.scene.state.product?.id
+      productId: ctx.scene.state.product?.id,
+      orderCount: error.orderCount
     });
-    await ctx.editMessageText('❌ Ma\'lumotlar bazasida xatolik: ' + error.message);
+    
+    if (error.code === 'FOREIGN_KEY_CONSTRAINT') {
+      await ctx.editMessageText(
+        `❌ MAHSULOTNI O'CHIRIB BO'LMAYDI\n\n` +
+        `Bu mahsulot uchun ${error.orderCount} ta buyurtma mavjud.\n\n` +
+        `🔧 Hal qilish yo'llari:\n` +
+        `1️⃣ Buyurtmalarni tugatish\n` +
+        `2️⃣ Mahsulotni faolsizlashtirish\n` +
+        `3️⃣ Mahsulot nomini o'zgartirish\n\n` +
+        `💡 Maslahat: Mahsulotni o'chirish o'rniga "faol emas" deb belgilash yaxshiroq.`
+      );
+    } else {
+      await ctx.editMessageText('❌ Ma\'lumotlar bazasida xatolik: ' + error.message);
+    }
   } finally {
     ctx.scene.leave();
   }
