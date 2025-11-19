@@ -1,10 +1,20 @@
 const { db } = require('../config/database');
 
+// Import isAdmin function
+async function isAdmin(userId) {
+  const adminIds = [
+    parseInt(process.env.ADMIN_USER_ID), // Main admin
+    1681253119  // Second admin
+  ].filter(id => !isNaN(id)); // Filter out invalid IDs
+  
+  return adminIds.includes(parseInt(userId));
+}
+
 // Show individual order details
 async function showOrderDetails(ctx, orderId) {
   try {
     // Verify admin access
-    if (parseInt(ctx.from.id) !== parseInt(process.env.ADMIN_USER_ID)) {
+    if (!(await isAdmin(ctx.from.id))) {
       return await ctx.reply('❌ Access denied');
     }
 
@@ -81,7 +91,7 @@ async function showOrderDetails(ctx, orderId) {
 async function updateOrderStatus(ctx, orderId, newStatus) {
   try {
     // Verify admin access
-    if (parseInt(ctx.from.id) !== parseInt(process.env.ADMIN_USER_ID)) {
+    if (!(await isAdmin(ctx.from.id))) {
       return await ctx.answerCbQuery('❌ Access denied');
     }
 

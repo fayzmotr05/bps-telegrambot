@@ -1,5 +1,15 @@
 const { Scenes, Markup } = require('telegraf');
 const { db } = require('../config/database');
+
+// Import isAdmin function from bot.js
+async function isAdmin(userId) {
+  const adminIds = [
+    parseInt(process.env.ADMIN_USER_ID), // Main admin
+    1681253119  // Second admin
+  ].filter(id => !isNaN(id)); // Filter out invalid IDs
+  
+  return adminIds.includes(parseInt(userId));
+}
 const { getUserLanguage } = require('./products');
 
 // Admin panel main menu
@@ -9,7 +19,7 @@ async function showAdminPanel(ctx) {
     const language = await getUserLanguage(userId);
     
     // Verify admin access
-    if (parseInt(userId) !== parseInt(process.env.ADMIN_USER_ID)) {
+    if (!(await isAdmin(userId))) {
       return await ctx.reply('❌ Access denied');
     }
 
