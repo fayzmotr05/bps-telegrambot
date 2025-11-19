@@ -2,13 +2,23 @@ const { Scenes } = require('telegraf');
 const { db } = require('../config/database');
 const { getUserLanguage } = require('./products');
 
+// Import isAdmin function
+async function isAdmin(userId) {
+  const adminIds = [
+    parseInt(process.env.ADMIN_USER_ID), // Main admin
+    1681253119  // Second admin
+  ].filter(id => !isNaN(id)); // Filter out invalid IDs
+  
+  return adminIds.includes(parseInt(userId));
+}
+
 // Bulk Stock Update Scene
 const bulkStockScene = new Scenes.BaseScene('bulk-stock-update');
 
 bulkStockScene.enter(async (ctx) => {
   try {
     // Verify admin access
-    if (parseInt(ctx.from.id) !== parseInt(process.env.ADMIN_USER_ID)) {
+    if (!(await isAdmin(ctx.from.id))) {
       await ctx.reply('❌ Access denied');
       return ctx.scene.leave();
     }

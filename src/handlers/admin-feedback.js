@@ -1,6 +1,16 @@
 const { db } = require('../config/database');
 const { Scenes } = require('telegraf');
 
+// Import isAdmin function
+async function isAdmin(userId) {
+  const adminIds = [
+    parseInt(process.env.ADMIN_USER_ID), // Main admin
+    1681253119  // Second admin
+  ].filter(id => !isNaN(id)); // Filter out invalid IDs
+  
+  return adminIds.includes(parseInt(userId));
+}
+
 // Create feedback response scene
 const feedbackResponseScene = new Scenes.BaseScene('feedback-response');
 
@@ -128,7 +138,7 @@ feedbackResponseScene.action('back_to_options', async (ctx) => {
 async function showFeedbackDetails(ctx, feedbackId) {
   try {
     // Verify admin access
-    if (parseInt(ctx.from.id) !== parseInt(process.env.ADMIN_USER_ID)) {
+    if (!(await isAdmin(ctx.from.id))) {
       return await ctx.reply('❌ Access denied');
     }
 
@@ -195,7 +205,7 @@ async function showFeedbackDetails(ctx, feedbackId) {
 async function markFeedbackAsRead(ctx, feedbackId) {
   try {
     // Verify admin access
-    if (parseInt(ctx.from.id) !== parseInt(process.env.ADMIN_USER_ID)) {
+    if (!(await isAdmin(ctx.from.id))) {
       return await ctx.answerCbQuery('❌ Access denied');
     }
 
@@ -216,7 +226,7 @@ async function markFeedbackAsRead(ctx, feedbackId) {
 async function startFeedbackResponse(ctx, feedbackId) {
   try {
     // Verify admin access
-    if (parseInt(ctx.from.id) !== parseInt(process.env.ADMIN_USER_ID)) {
+    if (!(await isAdmin(ctx.from.id))) {
       return await ctx.answerCbQuery('❌ Access denied');
     }
 
