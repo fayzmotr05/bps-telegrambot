@@ -265,7 +265,7 @@ async function sendFeedbackResponse(ctx) {
       `📞 Qo'shimcha savollar uchun:\n` +
       `Telefon: +998946375555\n` +
       `Telefon 2: +998946666940\n` +
-      `Email: uroasiaprint@gmail.com\n` +
+      `Email: euroasiaprint@gmail.com\n` +
       `🕐 Ish vaqti: пон-суббота с 08:00 по 18:00\n\n` +
       `🏢 BPS (EUROASIA PRINT)`;
 
@@ -319,7 +319,7 @@ function getResponseTemplate(templateType) {
       `📱 +998946375555\n` +
       `📱 +998946666940\n` +
       `🕐 Ish vaqti: пон-суббота с 08:00 по 18:00\n\n` +
-      `Yoki email orqali murojaat qiling: uroasiaprint@gmail.com\n\n` +
+      `Yoki email orqali murojaat qiling: euroasiaprint@gmail.com\n\n` +
       `Tez orada siz bilan bog'lanamiz!`,
 
     discount: 

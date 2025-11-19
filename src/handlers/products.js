@@ -79,9 +79,15 @@ async function showProductDetails(ctx, productId) {
       message += `📝 ${description}\n\n`;
     }
     
-    message += `💰 Narx: ${product.price.toLocaleString()} so'm\n`;
-    message += `📦 Qoldiq: ${product.stock_quantity} dona\n`;
-    message += `📊 Minimal buyurtma: ${product.min_order} dona\n`;
+    const priceLabel = language === 'uz' ? '💰 Narx:' : language === 'ru' ? '💰 Цена:' : '💰 Price:';
+    const stockLabel = language === 'uz' ? '📦 Qoldiq:' : language === 'ru' ? '📦 В наличии:' : '📦 In stock:';
+    const minOrderLabel = language === 'uz' ? '📊 Minimal buyurtma:' : language === 'ru' ? '📊 Мин. заказ:' : '📊 Min. order:';
+    const unitLabel = language === 'uz' ? 'dona' : language === 'ru' ? 'шт' : 'pcs';
+    const currencyLabel = language === 'uz' ? "so'm" : language === 'ru' ? 'сум' : 'UZS';
+    
+    message += `${priceLabel} ${product.price.toLocaleString()} ${currencyLabel}\n`;
+    message += `${stockLabel} ${product.stock_quantity} ${unitLabel}\n`;
+    message += `${minOrderLabel} ${product.min_order} ${unitLabel}\n`;
 
     const buttons = [
       [{

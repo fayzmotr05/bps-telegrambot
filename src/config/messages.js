@@ -118,21 +118,21 @@ const messages = {
          `📱 Telefon 2: +998946666940\n` +
          `📍 Manzil: Toshkent shahri\n` +
          `🕐 Ish vaqti: пон-суббота с 08:00 по 18:00\n` +
-         `📧 Email: uroasiaprint@gmail.com\n` +
+         `📧 Email: euroasiaprint@gmail.com\n` +
          `🏢 Yuqori sifatli bosma mahsulotlar`,
     ru: `📞 BPS (Euroasia Print)\n\n` +
          `📱 Телефон: +998946375555\n` +
          `📱 Телефон 2: +998946666940\n` +
          `📍 Адрес: г. Ташкент\n` +
          `🕐 Рабочее время: пон-суббота с 08:00 по 18:00\n` +
-         `📧 Email: uroasiaprint@gmail.com\n` +
+         `📧 Email: euroasiaprint@gmail.com\n` +
          `🏢 Высококачественная полиграфия`,
     en: `📞 BPS (Euroasia Print)\n\n` +
          `📱 Phone: +998946375555\n` +
          `📱 Phone 2: +998946666940\n` +
          `📍 Address: Tashkent\n` +
          `🕐 Working hours: Mon-Sat 08:00 - 18:00\n` +
-         `📧 Email: uroasiaprint@gmail.com\n` +
+         `📧 Email: euroasiaprint@gmail.com\n` +
          `🏢 High-quality printing products`
   },
 

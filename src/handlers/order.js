@@ -30,13 +30,25 @@ orderScene.enter(async (ctx) => {
     
     const name = product[`name_${language}`] || product.name_uz;
     
+    const priceLabel = language === 'uz' ? '💰 Narx:' : language === 'ru' ? '💰 Цена:' : '💰 Price:';
+    const stockLabel = language === 'uz' ? '📦 Mavjud:' : language === 'ru' ? '📦 Доступно:' : '📦 Available:';
+    const minOrderLabel = language === 'uz' ? '📊 Minimal:' : language === 'ru' ? '📊 Мин.:' : '📊 Min.:';
+    const unitLabel = language === 'uz' ? 'dona' : language === 'ru' ? 'шт' : 'pcs';
+    const currencyLabel = language === 'uz' ? "so'm" : language === 'ru' ? 'сум' : 'UZS';
+    const quantityQuestion = language === 'uz' ? '❓ Necha dona buyurtma berishni xohlaysiz?' :
+                            language === 'ru' ? '❓ Сколько штук вы хотите заказать?' :
+                            '❓ How many pieces would you like to order?';
+    const exampleText = language === 'uz' ? '(Raqam yozing, masalan:' :
+                       language === 'ru' ? '(Напишите число, например:' :
+                       '(Write a number, for example:';
+
     const message = 
       `📦 ${name}\n` +
-      `💰 Narx: ${product.price.toLocaleString()} so'm\n` +
-      `📦 Mavjud: ${product.stock_quantity} dona\n` +
-      `📊 Minimal: ${product.min_order} dona\n\n` +
-      `❓ Necha dona buyurtma berishni xohlaysiz?\n` +
-      `(Raqam yozing, masalan: ${product.min_order})`;
+      `${priceLabel} ${product.price.toLocaleString()} ${currencyLabel}\n` +
+      `${stockLabel} ${product.stock_quantity} ${unitLabel}\n` +
+      `${minOrderLabel} ${product.min_order} ${unitLabel}\n\n` +
+      `${quantityQuestion}\n` +
+      `${exampleText} ${product.min_order})`;
 
     const cancelButton = [[{
       text: language === 'uz' ? '❌ Bekor qilish' :
