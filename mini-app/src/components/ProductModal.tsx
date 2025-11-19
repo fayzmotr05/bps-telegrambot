@@ -161,7 +161,16 @@ export default function ProductModal({ product, language, onClose, onOrder }: Pr
         {/* Footer */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
           <button
-            onClick={canOrder ? onOrder : undefined}
+            onClick={canOrder ? () => {
+              // Show alert that user needs to order through the bot
+              const alertMessage = language === 'ru' 
+                ? 'Для заказа перейдите в бот и используйте команду /start' 
+                : language === 'en' 
+                ? 'To place an order, go to the bot and use /start command'
+                : 'Buyurtma berish uchun botga o\'ting va /start buyrug\'ini ishlating';
+              
+              alert(alertMessage);
+            } : undefined}
             disabled={!canOrder}
             className={`w-full py-3 px-4 rounded-lg font-semibold text-lg transition-all duration-200 ${
               canOrder

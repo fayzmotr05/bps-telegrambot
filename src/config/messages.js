@@ -114,29 +114,26 @@ const messages = {
   // Contact info
   contactInfo: {
     uz: `📞 BPS (Euroasia Print)\n\n` +
-         `📱 Telefon: +998 71 123 45 67\n` +
-         `📱 Telefon 2: +998 90 123 45 67\n` +
-         `📍 Manzil: Toshkent shahri, Yunusobod tumani\n` +
-         `🕐 Ish vaqti: 09:00 - 18:00 (Dush-Juma)\n` +
-         `📧 Email: info@bps.uz\n` +
-         `🌐 Website: www.bps.uz\n` +
-         `💬 Telegram: @bps_support`,
+         `📱 Telefon: +998946375555\n` +
+         `📱 Telefon 2: +998946666940\n` +
+         `📍 Manzil: Toshkent shahri\n` +
+         `🕐 Ish vaqti: пон-суббота с 08:00 по 18:00\n` +
+         `📧 Email: uroasiaprint@gmail.com\n` +
+         `🏢 Yuqori sifatli bosma mahsulotlar`,
     ru: `📞 BPS (Euroasia Print)\n\n` +
-         `📱 Телефон: +998 71 123 45 67\n` +
-         `📱 Телефон 2: +998 90 123 45 67\n` +
-         `📍 Адрес: г. Ташкент, Юнусабадский район\n` +
-         `🕐 Рабочее время: 09:00 - 18:00 (Пн-Пт)\n` +
-         `📧 Email: info@bps.uz\n` +
-         `🌐 Сайт: www.bps.uz\n` +
-         `💬 Telegram: @bps_support`,
+         `📱 Телефон: +998946375555\n` +
+         `📱 Телефон 2: +998946666940\n` +
+         `📍 Адрес: г. Ташкент\n` +
+         `🕐 Рабочее время: пон-суббота с 08:00 по 18:00\n` +
+         `📧 Email: uroasiaprint@gmail.com\n` +
+         `🏢 Высококачественная полиграфия`,
     en: `📞 BPS (Euroasia Print)\n\n` +
-         `📱 Phone: +998 71 123 45 67\n` +
-         `📱 Phone 2: +998 90 123 45 67\n` +
-         `📍 Address: Tashkent, Yunusabad district\n` +
-         `🕐 Working hours: 09:00 - 18:00 (Mon-Fri)\n` +
-         `📧 Email: info@bps.uz\n` +
-         `🌐 Website: www.bps.uz\n` +
-         `💬 Telegram: @bps_support`
+         `📱 Phone: +998946375555\n` +
+         `📱 Phone 2: +998946666940\n` +
+         `📍 Address: Tashkent\n` +
+         `🕐 Working hours: Mon-Sat 08:00 - 18:00\n` +
+         `📧 Email: uroasiaprint@gmail.com\n` +
+         `🏢 High-quality printing products`
   },
 
   // Company info

@@ -263,8 +263,10 @@ async function sendFeedbackResponse(ctx) {
       `Sizning fikr-mulohazangiz uchun rahmat!\n\n` +
       `📝 JAVOB:\n${responseText}\n\n` +
       `📞 Qo'shimcha savollar uchun:\n` +
-      `Telefon: +998 71 123 45 67\n` +
-      `Email: info@bps.uz\n\n` +
+      `Telefon: +998946375555\n` +
+      `Telefon 2: +998946666940\n` +
+      `Email: uroasiaprint@gmail.com\n` +
+      `🕐 Ish vaqti: пон-суббота с 08:00 по 18:00\n\n` +
       `🏢 BPS (EUROASIA PRINT)`;
 
     try {
@@ -308,15 +310,16 @@ function getResponseTemplate(templateType) {
     solve: 
       `🔧 Sizning muammoingizni hal qilish uchun darhol harakat qilyapmiz!\n\n` +
       `Bizning mutaxassislarimiz tez orada siz bilan bog'lanib, vaziyatni to'liq o'rganishadi.\n\n` +
-      `📞 Qo'shimcha ma'lumot uchun: +998 71 123 45 67\n\n` +
+      `📞 Qo'shimcha ma'lumot uchun: +998946375555\n\n` +
       `Sabringiz uchun uzr so'raymiz va muammoni tezda hal qilishga va'da beramiz!`,
 
     contact: 
       `📞 Sizning fikr-mulohazangiz biz uchun juda muhim!\n\n` +
       `Masalani batafsil muhokama qilish uchun quyidagi raqamga qo'ng'iroq qiling:\n\n` +
-      `📱 +998 71 123 45 67\n` +
-      `🕐 Ish vaqti: 09:00 - 18:00 (Dush-Juma)\n\n` +
-      `Yoki email orqali murojaat qiling: info@bps.uz\n\n` +
+      `📱 +998946375555\n` +
+      `📱 +998946666940\n` +
+      `🕐 Ish vaqti: пон-суббота с 08:00 по 18:00\n\n` +
+      `Yoki email orqali murojaat qiling: uroasiaprint@gmail.com\n\n` +
       `Tez orada siz bilan bog'lanamiz!`,
 
     discount: 
