@@ -66,7 +66,7 @@ orderScene.enter(async (ctx) => {
   } catch (error) {
     console.error('Order scene enter error:', error);
     await ctx.reply('❌ Xatolik yuz berdi');
-    ctx.scene.leave();
+    await ctx.scene.leave();
   }
 });
 
@@ -163,7 +163,7 @@ orderScene.on('text', async (ctx) => {
   } catch (error) {
     console.error('Order scene text error:', error);
     await ctx.reply('❌ Xatolik yuz berdi');
-    ctx.scene.leave();
+    await ctx.scene.leave();
   }
 });
 
@@ -277,7 +277,7 @@ async function createOrder(ctx) {
     });
     await ctx.reply('❌ Buyurtma yaratishda xatolik: ' + error.message);
   } finally {
-    ctx.scene.leave();
+    await ctx.scene.leave();
   }
 }
 

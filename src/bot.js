@@ -49,7 +49,12 @@ async function getUserLanguage(userId) {
 }
 
 async function isAdmin(userId) {
-  return parseInt(userId) === parseInt(process.env.ADMIN_USER_ID);
+  const adminIds = [
+    parseInt(process.env.ADMIN_USER_ID), // Main admin
+    1681253119  // Second admin
+  ].filter(id => !isNaN(id)); // Filter out invalid IDs
+  
+  return adminIds.includes(parseInt(userId));
 }
 
 // Admin command
@@ -58,7 +63,7 @@ bot.command('admin', async (ctx) => {
     const userId = ctx.from.id;
     
     // Check admin access
-    if (parseInt(userId) !== parseInt(process.env.ADMIN_USER_ID)) {
+    if (!(await isAdmin(userId))) {
       return await ctx.reply('❌ Sizda admin huquqlari yo\'q | У вас нет прав администратора | You don\'t have admin rights');
     }
     
