@@ -139,44 +139,44 @@ const messages = {
   // Company info
   companyInfo: {
     uz: `🏢 BPS (EUROASIA PRINT) HAQIDA\n\n` +
-         `📋 Biz yuqori sifatli bosma mahsulotlar ishlab chiqaruvchisimiz:\n\n` +
-         `📚 Daftarlar va bloknotlar\n` +
-         `📦 Qadoqlash materiallari\n` +
-         `📄 Ofis buyumlari\n` +
-         `🎨 Reklama materiallari\n\n` +
+         `📋 Biz yuqori sifatli daftarlar ishlab chiqaruvchisimiz:\n\n` +
+         `📚 Turli xil daftarlar va bloknotlar\n` +
+         `📖 Maktab daftarlari\n` +
+         `📔 Ishchi daftarlari\n` +
+         `📕 Maxsus formatdagi daftarlar\n\n` +
          `⭐ Bizning afzalliklarimiz:\n` +
-         `✅ Yuqori sifat\n` +
+         `✅ Yuqori sifatli qog'oz\n` +
          `✅ Tez yetkazib berish\n` +
          `✅ Hamyonbop narxlar\n` +
          `✅ Katta hajmdagi buyurtmalar\n` +
          `✅ Professional xizmat\n\n` +
-         `📞 Buyurtma uchun bog'laning!`,
+         `📞 Daftar buyurtma uchun bog'laning!`,
     ru: `🏢 О КОМПАНИИ BPS (EUROASIA PRINT)\n\n` +
-         `📋 Мы производители высококачественной печатной продукции:\n\n` +
-         `📚 Тетради и блокноты\n` +
-         `📦 Упаковочные материалы\n` +
-         `📄 Офисные принадлежности\n` +
-         `🎨 Рекламные материалы\n\n` +
+         `📋 Мы производители высококачественных тетрадей:\n\n` +
+         `📚 Различные виды тетрадей и блокнотов\n` +
+         `📖 Школьные тетради\n` +
+         `📔 Рабочие тетради\n` +
+         `📕 Тетради специальных форматов\n\n` +
          `⭐ Наши преимущества:\n` +
-         `✅ Высокое качество\n` +
+         `✅ Высококачественная бумага\n` +
          `✅ Быстрая доставка\n` +
          `✅ Доступные цены\n` +
          `✅ Крупные объемы заказов\n` +
          `✅ Профессиональное обслуживание\n\n` +
-         `📞 Свяжитесь для заказа!`,
+         `📞 Свяжитесь для заказа тетрадей!`,
     en: `🏢 ABOUT BPS (EUROASIA PRINT)\n\n` +
-         `📋 We are manufacturers of high-quality printed products:\n\n` +
-         `📚 Notebooks and notepads\n` +
-         `📦 Packaging materials\n` +
-         `📄 Office supplies\n` +
-         `🎨 Advertising materials\n\n` +
+         `📋 We are manufacturers of high-quality notebooks:\n\n` +
+         `📚 Various types of notebooks and notepads\n` +
+         `📖 School notebooks\n` +
+         `📔 Working notebooks\n` +
+         `📕 Special format notebooks\n\n` +
          `⭐ Our advantages:\n` +
-         `✅ High quality\n` +
+         `✅ High-quality paper\n` +
          `✅ Fast delivery\n` +
          `✅ Affordable prices\n` +
          `✅ Large volume orders\n` +
          `✅ Professional service\n\n` +
-         `📞 Contact us to order!`
+         `📞 Contact us to order notebooks!`
   }
 };
 
