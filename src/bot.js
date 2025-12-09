@@ -430,12 +430,25 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Health check endpoint for Railway
+let botStatus = 'starting';
+let botError = null;
+
+// Update bot status tracking
+function setBotStatus(status, error = null) {
+  botStatus = status;
+  botError = error;
+}
+
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'healthy',
+  const isHealthy = botStatus === 'running' || botStatus === 'starting';
+  
+  res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? 'healthy' : 'unhealthy',
+    botStatus: botStatus,
     timestamp: new Date().toISOString(),
     bot: 'BPS Telegram Bot v2.0',
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    error: botError
   });
 });
 
@@ -447,44 +460,70 @@ app.get('/', (req, res) => {
   });
 });
 
-// Start Express server
+// Start Express server FIRST (for health checks)
 app.listen(PORT, () => {
   console.log(`🌐 Health server running on port ${PORT}`);
+  console.log('✅ Health endpoint available at /health');
 });
 
-// Start bot
+// Start bot with error handling
 console.log('🚀 Starting BPS Telegram Bot...');
-bot.launch().then(() => {
-  console.log('✅ Bot started successfully!');
-  console.log('🤖 Bot info:', bot.botInfo.username);
-  
-  // Initialize notification system
-  initNotifications(bot);
-  console.log('📢 Notification system initialized');
-  
-  // Initialize inventory monitoring system
-  initInventoryMonitoring(bot);
-  console.log('🏭 Inventory monitoring initialized');
-  
-  // Test group connections if configured
-  if (process.env.ORDERS_GROUP_ID) {
-    testGroupConnection('orders').then(success => {
-      console.log(success ? '📢 Orders group connected' : '📢 Orders group connection failed');
-    });
-  } else {
-    console.log('📢 Orders group not configured');
+
+async function startBot() {
+  try {
+    setBotStatus('launching');
+    await bot.launch();
+    setBotStatus('running');
+    console.log('✅ Bot started successfully!');
+    console.log('🤖 Bot info:', bot.botInfo.username);
+    
+    // Initialize notification system
+    try {
+      initNotifications(bot);
+      console.log('📢 Notification system initialized');
+    } catch (error) {
+      console.log('⚠️ Notification system failed:', error.message);
+    }
+    
+    // Initialize inventory monitoring system
+    try {
+      initInventoryMonitoring(bot);
+      console.log('🏭 Inventory monitoring initialized');
+    } catch (error) {
+      console.log('⚠️ Inventory monitoring failed:', error.message);
+    }
+    
+    // Test group connections if configured
+    if (process.env.ORDERS_GROUP_ID) {
+      testGroupConnection('orders').then(success => {
+        console.log(success ? '📢 Orders group connected' : '📢 Orders group connection failed');
+      }).catch(error => {
+        console.log('📢 Orders group test failed:', error.message);
+      });
+    } else {
+      console.log('📢 Orders group not configured');
+    }
+    
+    if (process.env.FEEDBACK_GROUP_ID) {
+      testGroupConnection('feedback').then(success => {
+        console.log(success ? '📢 Feedback group connected' : '📢 Feedback group connection failed');
+      }).catch(error => {
+        console.log('📢 Feedback group test failed:', error.message);
+      });
+    } else {
+      console.log('📢 Feedback group not configured');
+    }
+    
+  } catch (error) {
+    console.error('❌ Bot start error:', error.message);
+    setBotStatus('failed', error.message);
+    // Don't exit process - keep health server running for debugging
+    console.log('🔄 Bot failed to start but health server continues running');
+    console.log('💡 Check environment variables: BOT_TOKEN, GOOGLE_SERVICE_ACCOUNT');
   }
-  
-  if (process.env.FEEDBACK_GROUP_ID) {
-    testGroupConnection('feedback').then(success => {
-      console.log(success ? '📢 Feedback group connected' : '📢 Feedback group connection failed');
-    });
-  } else {
-    console.log('📢 Feedback group not configured');
-  }
-}).catch((error) => {
-  console.error('❌ Bot start error:', error);
-  process.exit(1);
-});
+}
+
+// Start bot after a short delay to ensure health server is ready
+setTimeout(startBot, 1000);
 
 module.exports = bot;
