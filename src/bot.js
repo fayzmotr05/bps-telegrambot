@@ -10,6 +10,7 @@ const { getMessage } = require('./config/messages');
 const { showProducts, showProductDetails } = require('./handlers/products');
 const { orderScene, startOrder } = require('./handlers/order');
 const { feedbackScene, startFeedback } = require('./handlers/feedback');
+const contactReportScene = require('./handlers/contact-report');
 
 // Import admin handlers
 const { showAdminPanel, showAdminProducts, showAdminOrders, showAdminFeedback, showAdminStats } = require('./handlers/admin');
@@ -31,7 +32,7 @@ if (!process.env.BOT_TOKEN) {
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // Create scene stage with all scenes
-const stage = new Scenes.Stage([orderScene, feedbackScene, addProductScene, editProductScene, bulkStockScene, feedbackResponseScene]);
+const stage = new Scenes.Stage([orderScene, feedbackScene, addProductScene, editProductScene, bulkStockScene, feedbackResponseScene, contactReportScene]);
 
 // Middleware
 bot.use(session());
@@ -175,21 +176,24 @@ async function showMainMenu(ctx, userLanguage = null) {
     const keyboard = [
       [
         { text: getMessage('mainMenu.products', language) },
-        { text: getMessage('mainMenu.order', language) }
+        { text: getMessage('order', language) }
       ],
       [
-        { text: getMessage('mainMenu.feedback', language) },
-        { text: getMessage('mainMenu.contact', language) }
+        { text: getMessage('contactReport.title', language) },
+        { text: getMessage('mainMenu.feedback', language) }
       ],
       [
-        { text: getMessage('mainMenu.info', language) },
-        { text: getMessage('mainMenu.language', language) }
+        { text: getMessage('contact', language) },
+        { text: getMessage('about', language) }
+      ],
+      [
+        { text: getMessage('language', language) }
       ]
     ];
 
     // Admin panel available via /admin command instead of button
 
-    await ctx.reply('🏠 Asosiy menyu | Главное меню | Main Menu', {
+    await ctx.reply(getMessage('mainMenuTitle', language), {
       reply_markup: {
         keyboard: keyboard,
         resize_keyboard: true
@@ -222,6 +226,15 @@ bot.hears(/^(ℹ️ Ma'lumot|ℹ️ Информация|ℹ️ Information)$/, 
 
 bot.hears(/^(🌐 Til|🌐 Язык|🌐 Language)$/, async (ctx) => {
   await showLanguageSelection(ctx);
+});
+
+bot.hears(/^(📊 Hisobot|📊 Отчет|📊 Report)$/, async (ctx) => {
+  try {
+    await ctx.scene.enter('contact-report');
+  } catch (error) {
+    console.error('Contact report scene error:', error);
+    await ctx.reply('❌ Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
+  }
 });
 
 bot.hears(/^(👑 Admin Panel|👑 Админ Панель)$/, async (ctx) => {

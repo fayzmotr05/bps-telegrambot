@@ -177,6 +177,148 @@ const messages = {
          `✅ Large volume orders\n` +
          `✅ Professional service\n\n` +
          `📞 Contact us to order notebooks!`
+  },
+
+  // Contact Report messages
+  contactReport: {
+    title: {
+      uz: '📊 Hisobot',
+      ru: '📊 Отчет', 
+      en: '📊 Report'
+    },
+    requestContact: {
+      uz: '📞 Hisobot olish uchun telefon raqamingizni ulashing.\n\nQuyidagi tugmani bosing:',
+      ru: '📞 Поделитесь номером телефона для получения отчета.\n\nНажмите кнопку ниже:',
+      en: '📞 Share your phone number to get a report.\n\nPress the button below:'
+    },
+    shareContact: {
+      uz: '📱 Telefon raqamni ulashish',
+      ru: '📱 Поделиться номером',
+      en: '📱 Share Phone Number'
+    },
+    processing: {
+      uz: '⏳ Telefon raqamingiz qabul qilindi. Hisobot tayyorlanmoqda...',
+      ru: '⏳ Номер телефона принят. Готовим отчет...',
+      en: '⏳ Phone number received. Preparing report...'
+    },
+    alreadyProcessing: {
+      uz: '⚠️ Bu raqam uchun hisobot allaqachon tayyorlanmoqda. Iltimos kutib turing.',
+      ru: '⚠️ Отчет для этого номера уже готовится. Пожалуйста, подождите.',
+      en: '⚠️ Report for this number is already being processed. Please wait.'
+    },
+    selectDateRange: {
+      uz: '📅 Hisobot uchun sana oralig\'ini tanlang:',
+      ru: '📅 Выберите диапазон дат для отчета:',
+      en: '📅 Select date range for report:'
+    },
+    today: {
+      uz: '📅 Bugun',
+      ru: '📅 Сегодня',
+      en: '📅 Today'
+    },
+    customRange: {
+      uz: '📅 Boshqa sana',
+      ru: '📅 Другие даты',
+      en: '📅 Custom Range'
+    },
+    enterFromDate: {
+      uz: '📅 Boshlanish sanasini kiriting (YYYY-MM-DD formatida):\n\nMasalan: 2024-01-15',
+      ru: '📅 Введите дату начала (в формате YYYY-MM-DD):\n\nНапример: 2024-01-15',
+      en: '📅 Enter start date (YYYY-MM-DD format):\n\nExample: 2024-01-15'
+    },
+    enterToDate: {
+      uz: '📅 Tugash sanasini kiriting (YYYY-MM-DD formatida):\n\nMasalan: 2024-01-31',
+      ru: '📅 Введите дату окончания (в формате YYYY-MM-DD):\n\nНапример: 2024-01-31',
+      en: '📅 Enter end date (YYYY-MM-DD format):\n\nExample: 2024-01-31'
+    },
+    invalidDate: {
+      uz: '❌ Noto\'g\'ri sana formati. Iltimos YYYY-MM-DD formatida kiriting.\n\nMasalan: 2024-01-15',
+      ru: '❌ Неверный формат даты. Пожалуйста, введите в формате YYYY-MM-DD.\n\nНапример: 2024-01-15',
+      en: '❌ Invalid date format. Please enter in YYYY-MM-DD format.\n\nExample: 2024-01-15'
+    },
+    invalidDateRange: {
+      uz: '❌ Tugash sanasi boshlanish sanasidan kichik bo\'lishi mumkin emas.',
+      ru: '❌ Дата окончания не может быть раньше даты начала.',
+      en: '❌ End date cannot be earlier than start date.'
+    },
+    generatingReport: {
+      uz: '📊 Hisobot yaratilmoqda... Iltimos kutib turing.',
+      ru: '📊 Генерируется отчет... Пожалуйста, подождите.',
+      en: '📊 Generating report... Please wait.'
+    },
+    noDataFound: {
+      uz: '❌ Sizning telefon raqamingiz uchun ma\'lumot topilmadi.',
+      ru: '❌ Данные для вашего номера телефона не найдены.',
+      en: '❌ No data found for your phone number.'
+    },
+    reportGenerated: {
+      uz: '✅ Hisobotingiz tayyor! PDF faylni yuklab oling.',
+      ru: '✅ Ваш отчет готов! Скачайте PDF файл.',
+      en: '✅ Your report is ready! Download the PDF file.'
+    },
+    completed: {
+      uz: '✅ Hisobot muvaffaqiyatli yuborildi.',
+      ru: '✅ Отчет успешно отправлен.',
+      en: '✅ Report sent successfully.'
+    },
+    errorGenerating: {
+      uz: '❌ Hisobot yaratishda xatolik yuz berdi. Iltimos qaytadan urinib ko\'ring.',
+      ru: '❌ Ошибка при создании отчета. Пожалуйста, попробуйте снова.',
+      en: '❌ Error generating report. Please try again.'
+    }
+  },
+
+  // Errors
+  errors: {
+    general: {
+      uz: '❌ Xatolik yuz berdi. Iltimos qaytadan urinib ko\'ring.',
+      ru: '❌ Произошла ошибка. Пожалуйста, попробуйте снова.',
+      en: '❌ An error occurred. Please try again.'
+    }
+  },
+
+  // Navigation
+  back: {
+    uz: '⬅️ Orqaga',
+    ru: '⬅️ Назад',
+    en: '⬅️ Back'
+  },
+
+  // Main menu labels  
+  mainMenuTitle: {
+    uz: '🏠 Asosiy menyu',
+    ru: '🏠 Главное меню',
+    en: '🏠 Main Menu'
+  },
+
+  order: {
+    uz: '📝 Buyurtma',
+    ru: '📝 Заказ', 
+    en: '📝 Order'
+  },
+
+  myOrders: {
+    uz: '📋 Mening buyurtmalarim',
+    ru: '📋 Мои заказы',
+    en: '📋 My Orders'
+  },
+
+  about: {
+    uz: 'ℹ️ Biz haqimizda',
+    ru: 'ℹ️ О нас',
+    en: 'ℹ️ About Us'
+  },
+
+  contact: {
+    uz: '📞 Kontakt',
+    ru: '📞 Контакт',
+    en: '📞 Contact'
+  },
+
+  language: {
+    uz: '🌐 Til',
+    ru: '🌐 Язык',
+    en: '🌐 Language'
   }
 };
 

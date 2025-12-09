@@ -56,3 +56,9 @@ build/
 
 # Railway
 railway.toml
+
+# Google Service Account Credentials
+google-credentials.json
+bps-user-data-bot-*.json
+test-credentials.js
+setup-credentials.md
