@@ -74,6 +74,10 @@ class PhoneRegistryService {
             }
 
             console.log(`📚 Found ${phoneNumbers.length} phone numbers in directory`);
+            console.log('📚 All phone numbers in registry:');
+            phoneNumbers.forEach((entry, index) => {
+                console.log(`  ${index + 1}. "${entry.clientName}" -> ${entry.originalValue} -> ${entry.normalized}`);
+            });
             return phoneNumbers;
             
         } catch (error) {
@@ -130,13 +134,24 @@ class PhoneRegistryService {
     // Check if phone number is in registry and get today's report data
     async checkPhoneAndGetTodaysReport(phoneNumber) {
         try {
+            console.log(`🔍 Checking phone registration for: "${phoneNumber}"`);
             const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
             if (!normalizedPhone) {
+                console.log(`❌ Invalid phone format: "${phoneNumber}"`);
                 return { registered: false, reason: 'Invalid phone format' };
             }
 
+            console.log(`🔍 Normalized phone: "${normalizedPhone}"`);
+            
             // Get all registered phones
+            console.log(`📚 Loading phone registry...`);
             const registeredPhones = await this.getAllRegisteredPhones();
+            console.log(`📚 Registry loaded with ${registeredPhones.length} entries`);
+            
+            if (registeredPhones.length === 0) {
+                console.log(`❌ No phones found in registry!`);
+                return { registered: false, reason: 'Registry is empty' };
+            }
             
             // Check if this phone is registered - very thorough comparison
             const phoneEntry = registeredPhones.find(entry => {
@@ -157,11 +172,19 @@ class PhoneRegistryService {
             });
 
             if (!phoneEntry) {
+                console.log(`❌ Phone not found in registry: "${normalizedPhone}"`);
+                console.log(`🔍 Comparison summary: Checked against ${registeredPhones.length} registry entries`);
                 return { 
                     registered: false, 
                     reason: 'Phone number not found in registry',
                     normalizedPhone: normalizedPhone
                 };
+            }
+
+            console.log(`✅ Phone found in registry! Client: "${phoneEntry.clientName}", Original: "${phoneEntry.originalValue}"`);
+            
+            if (phoneEntry.clientName) {
+                console.log(`👤 Matched client: ${phoneEntry.clientName}`);
             }
 
             // Get today's date in the format used by the sheet
