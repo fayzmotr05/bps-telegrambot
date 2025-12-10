@@ -35,8 +35,8 @@ if (!process.env.BOT_TOKEN) {
 // Create bot instance
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Create scene stage with all scenes
-const stage = new Scenes.Stage([orderScene, feedbackScene, addProductScene, editProductScene, bulkStockScene, feedbackResponseScene, contactReportScene, phoneRegistrationScene]);
+// Create scene stage with all scenes (temporarily excluding phoneRegistrationScene until database is ready)
+const stage = new Scenes.Stage([orderScene, feedbackScene, addProductScene, editProductScene, bulkStockScene, feedbackResponseScene, contactReportScene]);
 
 // Middleware
 bot.use(session());
@@ -243,12 +243,8 @@ bot.hears(/^(📊 Hisobot|📊 Отчет|📊 Report)$/, async (ctx) => {
 });
 
 bot.hears(/^(📱 Telefon ro'yxatdan o'tish|📱 Регистрация телефона|📱 Phone Registration)$/, async (ctx) => {
-  try {
-    await ctx.scene.enter('phone-registration');
-  } catch (error) {
-    console.error('Phone registration scene error:', error);
-    await ctx.reply('❌ Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
-  }
+  const lang = await getUserLanguage(ctx.from.id);
+  await ctx.reply('❌ Telefon ro\'yxatdan o\'tish hozircha mavjud emas. Database tayyorlanmoqda.');
 });
 
 bot.hears(/^(👑 Admin Panel|👑 Админ Панель)$/, async (ctx) => {
@@ -536,7 +532,8 @@ async function startBot() {
       dailyAutomation.init();
       console.log('📅 Daily automation service initialized');
     } catch (error) {
-      console.log('⚠️ Daily automation failed:', error.message);
+      console.log('⚠️ Daily automation failed to initialize:', error.message);
+      // Don't let this crash the whole bot
     }
     
     // Test group connections if configured
