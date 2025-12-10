@@ -233,7 +233,7 @@ bot.hears(/^(🌐 Til|🌐 Язык|🌐 Language)$/, async (ctx) => {
   await showLanguageSelection(ctx);
 });
 
-bot.hears(/^(📊 Hisobot|📊 Отчет|📊 Report)$/, async (ctx) => {
+bot.hears(/^📊 Hisobot$|^📊 Отчет$|^📊 Report$/, async (ctx) => {
   try {
     await ctx.scene.enter('contact-report');
   } catch (error) {
@@ -242,7 +242,7 @@ bot.hears(/^(📊 Hisobot|📊 Отчет|📊 Report)$/, async (ctx) => {
   }
 });
 
-bot.hears(/^(📱 Telefon ro'yxatdan o'tish|📱 Регистрация телефона|📱 Phone Registration)$/, async (ctx) => {
+bot.hears(/^📱 Telefon ro'yxatdan o'tish$|^📱 Регистрация телефона$|^📱 Phone Registration$/, async (ctx) => {
   try {
     await ctx.scene.enter('phone-registration');
   } catch (error) {
