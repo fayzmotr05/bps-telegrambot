@@ -34,8 +34,8 @@ class PhoneRegistryService {
         try {
             console.log('📚 Reading phone numbers from directory sheet...');
             
-            // Read column V from row 2 onwards
-            const range = `${DIRECTORY_SHEET_NAME}!V2:V`;
+            // Read columns Q (names) and R (phones) from row 2 onwards
+            const range = `${DIRECTORY_SHEET_NAME}!Q2:R`;
             const response = await this.sheets.spreadsheets.values.get({
                 spreadsheetId: SHEET_ID,
                 range: range
@@ -46,25 +46,29 @@ class PhoneRegistryService {
             let emptyCount = 0;
 
             for (let i = 0; i < rows.length; i++) {
-                const cellValue = rows[i] && rows[i][0] ? rows[i][0].toString().trim() : '';
+                const row = rows[i] || [];
+                const clientName = row[0] ? row[0].toString().trim() : ''; // Column Q
+                const phoneValue = row[1] ? row[1].toString().trim() : ''; // Column R
                 
-                if (!cellValue) {
+                if (!phoneValue) {
                     emptyCount++;
-                    // Stop if we find 4 consecutive empty cells
+                    // Stop if we find 4 consecutive empty phone cells
                     if (emptyCount >= 4) {
-                        console.log(`📚 Stopped reading at row ${i + 2} after 4 empty cells`);
+                        console.log(`📚 Stopped reading at row ${i + 2} after 4 empty phone cells`);
                         break;
                     }
                 } else {
-                    emptyCount = 0; // Reset counter if we find a value
+                    emptyCount = 0; // Reset counter if we find a phone value
                     // Clean and normalize phone number
-                    const cleanPhone = this.normalizePhoneNumber(cellValue);
+                    const cleanPhone = this.normalizePhoneNumber(phoneValue);
                     if (cleanPhone) {
                         phoneNumbers.push({
-                            originalValue: cellValue,
+                            clientName: clientName || 'Unknown',
+                            originalValue: phoneValue,
                             normalized: cleanPhone,
                             row: i + 2
                         });
+                        console.log(`📚 Row ${i + 2}: "${clientName}" -> ${phoneValue} -> ${cleanPhone}`);
                     }
                 }
             }
@@ -139,7 +143,7 @@ class PhoneRegistryService {
                 // Normalize the registry entry for comparison
                 const entryNormalized = this.normalizePhoneNumber(entry.originalValue);
                 
-                console.log(`📞 Comparing: incoming="${normalizedPhone}" vs registry="${entryNormalized}" (original: "${entry.originalValue}")`);
+                console.log(`📞 Comparing: incoming="${normalizedPhone}" vs registry="${entryNormalized}" (original: "${entry.originalValue}", client: "${entry.clientName}")`);
                 
                 return (
                     entry.normalized === normalizedPhone ||
