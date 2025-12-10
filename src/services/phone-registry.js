@@ -29,19 +29,39 @@ class PhoneRegistryService {
         this.sheets = google.sheets({ version: 'v4', auth: this.auth });
     }
 
-    // Get all phone numbers from 📚 Справочники sheet, column V
+    // Get all phone numbers from 📚 Справочники sheet, column R with names from Q
     async getAllRegisteredPhones() {
         try {
-            console.log('📚 Reading phone numbers from directory sheet...');
+            console.log('📚 Starting to read phone numbers from directory sheet...');
+            console.log(`📚 Sheet ID: ${SHEET_ID}`);
+            console.log(`📚 Sheet Name: "${DIRECTORY_SHEET_NAME}"`);
+            console.log(`📚 Range: "${DIRECTORY_SHEET_NAME}!Q2:R"`);
             
             // Read columns Q (names) and R (phones) from row 2 onwards
             const range = `${DIRECTORY_SHEET_NAME}!Q2:R`;
+            
+            console.log('📚 Making Google Sheets API call...');
             const response = await this.sheets.spreadsheets.values.get({
                 spreadsheetId: SHEET_ID,
                 range: range
             });
 
+            console.log('📚 Google Sheets API response received');
+            console.log(`📚 Response status: ${response.status}`);
+            console.log(`📚 Response data:`, JSON.stringify(response.data, null, 2));
+
             const rows = response.data.values || [];
+            console.log(`📚 Raw rows from sheet: ${rows.length} rows`);
+            
+            if (rows.length === 0) {
+                console.log('❌ No rows returned from Google Sheets!');
+                console.log('📚 This could mean:');
+                console.log('  1. The sheet name "📚 Справочники" doesn\'t exist');
+                console.log('  2. Columns Q and R are empty');
+                console.log('  3. There\'s a permissions issue');
+                console.log('  4. The range Q2:R doesn\'t contain data');
+                return [];
+            }
             const phoneNumbers = [];
             let emptyCount = 0;
 
@@ -82,6 +102,23 @@ class PhoneRegistryService {
             
         } catch (error) {
             console.error('❌ Error reading phone directory:', error);
+            console.error('❌ Error details:', {
+                message: error.message,
+                code: error.code,
+                status: error.status,
+                stack: error.stack
+            });
+            
+            if (error.message?.includes('Unable to parse range')) {
+                console.error('❌ Range parsing error - check sheet name and column references');
+            }
+            if (error.message?.includes('not found')) {
+                console.error('❌ Sheet or range not found - check if "📚 Справочники" sheet exists');
+            }
+            if (error.message?.includes('permission')) {
+                console.error('❌ Permission error - check Google Sheets API access');
+            }
+            
             return [];
         }
     }
