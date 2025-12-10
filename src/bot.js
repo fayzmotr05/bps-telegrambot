@@ -234,19 +234,21 @@ bot.hears(/^(🌐 Til|🌐 Язык|🌐 Language)$/, async (ctx) => {
 });
 
 bot.hears(/^📊 Hisobot$|^📊 Отчет$|^📊 Report$/, async (ctx) => {
+  console.log('📊 Contact report button clicked by user:', ctx.from.id);
   try {
     await ctx.scene.enter('contact-report');
   } catch (error) {
-    console.error('Contact report scene error:', error);
+    console.error('❌ Contact report scene error:', error);
     await ctx.reply('❌ Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
   }
 });
 
 bot.hears(/^📱 Telefon ro'yxatdan o'tish$|^📱 Регистрация телефона$|^📱 Phone Registration$/, async (ctx) => {
+  console.log('📱 Phone registration button clicked by user:', ctx.from.id);
   try {
     await ctx.scene.enter('phone-registration');
   } catch (error) {
-    console.error('Phone registration scene error:', error);
+    console.error('❌ Phone registration scene error:', error);
     const lang = await getUserLanguage(ctx.from.id);
     await ctx.reply('❌ Telefon ro\'yxatdan o\'tish hozircha mavjud emas. Iltimos keyinroq urinib ko\'ring.');
   }
@@ -422,6 +424,12 @@ bot.on('message', async (ctx, next) => {
   } catch (error) {
     return next();
   }
+});
+
+// Debug: Log all text messages to see what's being sent
+bot.on('text', async (ctx, next) => {
+  console.log(`📝 User ${ctx.from.id} sent text: "${ctx.message.text}"`);
+  return next();
 });
 
 // Error handling
