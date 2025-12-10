@@ -157,14 +157,25 @@ class PhoneRegistryService {
     // Get today's report data for a specific phone
     async getTodaysReportData(phoneNumber, dateStr) {
         try {
-            // Write phone and today's date to the report sheet (only B2, C2, D2)
+            // Write phone in B1, dates in C2 and D2
             await this.sheets.spreadsheets.values.update({
                 spreadsheetId: SHEET_ID,
-                range: `${REPORT_SHEET_NAME}!B2:D2`,
+                range: `${REPORT_SHEET_NAME}!B1`,
                 valueInputOption: 'USER_ENTERED',
                 resource: {
                     values: [
-                        [phoneNumber, dateStr, dateStr] // Phone in B2, dates in C2 and D2
+                        [phoneNumber] // Phone in B1
+                    ]
+                }
+            });
+
+            await this.sheets.spreadsheets.values.update({
+                spreadsheetId: SHEET_ID,
+                range: `${REPORT_SHEET_NAME}!C2:D2`,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: [
+                        [dateStr, dateStr] // Dates in C2 and D2
                     ]
                 }
             });
@@ -206,16 +217,29 @@ class PhoneRegistryService {
         }
     }
 
-    // Clean up after generating report (only B2, C2, D2)
+    // Clean up after generating report (B1, C2, D2)
     async cleanupReportData() {
         try {
+            // Clear B1
             await this.sheets.spreadsheets.values.update({
                 spreadsheetId: SHEET_ID,
-                range: `${REPORT_SHEET_NAME}!B2:D2`,
+                range: `${REPORT_SHEET_NAME}!B1`,
                 valueInputOption: 'USER_ENTERED',
                 resource: {
                     values: [
-                        ['', '', ''] // Clear only B2, C2, D2
+                        [''] // Clear B1
+                    ]
+                }
+            });
+
+            // Clear C2:D2
+            await this.sheets.spreadsheets.values.update({
+                spreadsheetId: SHEET_ID,
+                range: `${REPORT_SHEET_NAME}!C2:D2`,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: [
+                        ['', ''] // Clear C2, D2
                     ]
                 }
             });

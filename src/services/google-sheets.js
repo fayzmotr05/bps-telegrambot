@@ -33,21 +33,27 @@ class SheetsService {
 
     async updateCells(phoneNumber, fromDate, toDate) {
         try {
-            const range = `${SHEET_NAME}!B2:D2`;
-            const values = [
-                [phoneNumber, fromDate, toDate] // Only B2, C2, D2
-            ];
-
+            // Update B1 with phone number
             await this.sheets.spreadsheets.values.update({
                 spreadsheetId: SHEET_ID,
-                range: range,
+                range: `${SHEET_NAME}!B1`,
                 valueInputOption: 'USER_ENTERED',
                 resource: {
-                    values: values
+                    values: [[phoneNumber]]
                 }
             });
 
-            console.log(`Updated cells: B2=${phoneNumber}, C2=${fromDate}, D2=${toDate}`);
+            // Update C2:D2 with dates
+            await this.sheets.spreadsheets.values.update({
+                spreadsheetId: SHEET_ID,
+                range: `${SHEET_NAME}!C2:D2`,
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: [[fromDate, toDate]]
+                }
+            });
+
+            console.log(`Updated cells: B1=${phoneNumber}, C2=${fromDate}, D2=${toDate}`);
             return true;
         } catch (error) {
             console.error('Error updating Google Sheets:', error);
