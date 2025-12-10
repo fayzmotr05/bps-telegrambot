@@ -35,8 +35,8 @@ if (!process.env.BOT_TOKEN) {
 // Create bot instance
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Create scene stage with all scenes (temporarily excluding phoneRegistrationScene until database is ready)
-const stage = new Scenes.Stage([orderScene, feedbackScene, addProductScene, editProductScene, bulkStockScene, feedbackResponseScene, contactReportScene]);
+// Create scene stage with all scenes
+const stage = new Scenes.Stage([orderScene, feedbackScene, addProductScene, editProductScene, bulkStockScene, feedbackResponseScene, contactReportScene, phoneRegistrationScene]);
 
 // Middleware
 bot.use(session());
@@ -243,8 +243,13 @@ bot.hears(/^(📊 Hisobot|📊 Отчет|📊 Report)$/, async (ctx) => {
 });
 
 bot.hears(/^(📱 Telefon ro'yxatdan o'tish|📱 Регистрация телефона|📱 Phone Registration)$/, async (ctx) => {
-  const lang = await getUserLanguage(ctx.from.id);
-  await ctx.reply('❌ Telefon ro\'yxatdan o\'tish hozircha mavjud emas. Database tayyorlanmoqda.');
+  try {
+    await ctx.scene.enter('phone-registration');
+  } catch (error) {
+    console.error('Phone registration scene error:', error);
+    const lang = await getUserLanguage(ctx.from.id);
+    await ctx.reply('❌ Telefon ro\'yxatdan o\'tish hozircha mavjud emas. Iltimos keyinroq urinib ko\'ring.');
+  }
 });
 
 bot.hears(/^(👑 Admin Panel|👑 Админ Панель)$/, async (ctx) => {
@@ -505,6 +510,14 @@ console.log('🚀 Starting BPS Telegram Bot...');
 async function startBot() {
   try {
     setBotStatus('launching');
+    
+    // Initialize database
+    console.log('🗄️ Initializing database...');
+    const dbReady = await db.initializeDatabase();
+    if (!dbReady) {
+      console.log('⚠️ Database not fully ready, some features may be limited');
+    }
+    
     await bot.launch();
     setBotStatus('running');
     console.log('✅ Bot started successfully!');
@@ -527,13 +540,16 @@ async function startBot() {
     }
     
     // Initialize daily automation service
-    try {
-      const dailyAutomation = new DailyAutomationService(bot);
-      dailyAutomation.init();
-      console.log('📅 Daily automation service initialized');
-    } catch (error) {
-      console.log('⚠️ Daily automation failed to initialize:', error.message);
-      // Don't let this crash the whole bot
+    if (dbReady) {
+      try {
+        const dailyAutomation = new DailyAutomationService(bot);
+        dailyAutomation.init();
+        console.log('📅 Daily automation service initialized');
+      } catch (error) {
+        console.log('⚠️ Daily automation failed to initialize:', error.message);
+      }
+    } else {
+      console.log('📅 Daily automation disabled - database not ready');
     }
     
     // Test group connections if configured

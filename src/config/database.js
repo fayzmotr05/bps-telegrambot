@@ -395,6 +395,31 @@ const db = {
     }
   },
 
+  // Database initialization
+  async initializeDatabase() {
+    try {
+      console.log('🗄️ Checking database tables...');
+      
+      // Test if user_phones table exists by trying to select from it
+      const { data, error } = await supabase
+        .from('user_phones')
+        .select('id')
+        .limit(1);
+      
+      if (error && error.code === '42P01') {
+        console.log('⚠️ user_phones table does not exist. Please create it manually in Supabase.');
+        console.log('📝 Run the SQL script: database/create_user_phones_table.sql');
+        return false;
+      }
+      
+      console.log('✅ Database tables verified');
+      return true;
+    } catch (error) {
+      console.error('❌ Database initialization check failed:', error.message);
+      return false;
+    }
+  },
+
   // Phone Registry functions
   async createUserPhone(userData) {
     try {
