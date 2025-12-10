@@ -78,33 +78,48 @@ class PhoneRegistryService {
         }
     }
 
-    // Normalize phone number format
+    // Normalize phone number format - very aggressive normalization
     normalizePhoneNumber(phoneStr) {
         if (!phoneStr) return null;
         
-        // Remove all non-digits
+        // Convert to string and remove ALL non-digits (including +, -, spaces, etc.)
         const digits = phoneStr.toString().replace(/\D/g, '');
+        
+        console.log(`📞 Normalizing phone: "${phoneStr}" -> digits: "${digits}"`);
         
         // Handle different formats
         if (digits.length >= 9) {
-            // If starts with country code, keep as is
+            let normalized;
+            
+            // If starts with country code 998, keep as is (but limit to 12 digits)
             if (digits.startsWith('998')) {
-                return digits;
+                normalized = digits.substring(0, 12); // Keep only 998 + 9 digits
+                console.log(`📞 Country code format: ${normalized}`);
+                return normalized;
             }
             // If starts with 8, replace with 998
             else if (digits.startsWith('8') && digits.length >= 10) {
-                return '998' + digits.substring(1);
+                normalized = '998' + digits.substring(1, 10); // 998 + next 9 digits
+                console.log(`📞 8-prefix format: ${normalized}`);
+                return normalized;
             }
-            // If it's just the local number, add 998
+            // If it's just the local number (9 digits), add 998
             else if (digits.length === 9) {
-                return '998' + digits;
+                normalized = '998' + digits;
+                console.log(`📞 Local format: ${normalized}`);
+                return normalized;
             }
-            // If it's 12 digits starting with +998
-            else if (digits.length === 12 && digits.startsWith('998')) {
-                return digits;
+            // For any other format with 10+ digits, try to extract 9-digit local part
+            else if (digits.length >= 10) {
+                // Try to find a 9-digit sequence that looks like a valid UZ number
+                const lastNineDigits = digits.substring(digits.length - 9);
+                normalized = '998' + lastNineDigits;
+                console.log(`📞 Extracted local: ${normalized}`);
+                return normalized;
             }
         }
         
+        console.log(`📞 Invalid phone format: "${phoneStr}" (${digits.length} digits)`);
         return digits.length >= 9 ? digits : null;
     }
 
@@ -119,12 +134,23 @@ class PhoneRegistryService {
             // Get all registered phones
             const registeredPhones = await this.getAllRegisteredPhones();
             
-            // Check if this phone is registered
-            const phoneEntry = registeredPhones.find(entry => 
-                entry.normalized === normalizedPhone ||
-                entry.originalValue === phoneNumber ||
-                entry.originalValue === normalizedPhone
-            );
+            // Check if this phone is registered - very thorough comparison
+            const phoneEntry = registeredPhones.find(entry => {
+                // Normalize the registry entry for comparison
+                const entryNormalized = this.normalizePhoneNumber(entry.originalValue);
+                
+                console.log(`📞 Comparing: incoming="${normalizedPhone}" vs registry="${entryNormalized}" (original: "${entry.originalValue}")`);
+                
+                return (
+                    entry.normalized === normalizedPhone ||
+                    entryNormalized === normalizedPhone ||
+                    entry.originalValue === phoneNumber ||
+                    entry.originalValue === normalizedPhone ||
+                    // Also check if the digits-only versions match
+                    entry.originalValue.replace(/\D/g, '') === normalizedPhone ||
+                    entry.normalized.replace(/\D/g, '') === normalizedPhone.replace(/\D/g, '')
+                );
+            });
 
             if (!phoneEntry) {
                 return { 
