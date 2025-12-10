@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 const handlebars = require('handlebars');
 const path = require('path');
 const fs = require('fs').promises;
