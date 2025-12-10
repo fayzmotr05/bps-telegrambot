@@ -429,6 +429,9 @@ process.once('SIGTERM', () => {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Railway requires binding to 0.0.0.0
+const HOST = '0.0.0.0';
+
 // Health check endpoint for Railway
 let botStatus = 'starting';
 let botError = null;
@@ -440,6 +443,19 @@ function setBotStatus(status, error = null) {
 }
 
 app.get('/health', (req, res) => {
+  // Railway health checks should be simple and fast
+  res.status(200).json({
+    status: 'ok',
+    botStatus: botStatus,
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
+    port: PORT,
+    host: HOST
+  });
+});
+
+// Detailed health check for debugging
+app.get('/health/detailed', (req, res) => {
   const isHealthy = botStatus === 'running' || botStatus === 'starting';
   
   res.status(isHealthy ? 200 : 503).json({
@@ -448,7 +464,13 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     bot: 'BPS Telegram Bot v2.0',
     uptime: process.uptime(),
-    error: botError
+    error: botError,
+    environment: {
+      port: PORT,
+      host: HOST,
+      nodeVersion: process.version,
+      platform: process.platform
+    }
   });
 });
 
@@ -461,9 +483,10 @@ app.get('/', (req, res) => {
 });
 
 // Start Express server FIRST (for health checks)
-app.listen(PORT, () => {
-  console.log(`🌐 Health server running on port ${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`🌐 Health server running on ${HOST}:${PORT}`);
   console.log('✅ Health endpoint available at /health');
+  console.log(`📊 Server URL: http://${HOST}:${PORT}`);
 });
 
 // Start bot with error handling
