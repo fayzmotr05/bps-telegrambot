@@ -393,6 +393,93 @@ const db = {
       console.error('Database error - getProductAnalytics:', error.message);
       return null;
     }
+  },
+
+  // Phone Registry functions
+  async createUserPhone(userData) {
+    try {
+      const { data, error } = await supabase
+        .from('user_phones')
+        .insert(userData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Database error - createUserPhone:', error.message);
+      throw error;
+    }
+  },
+
+  async updateUserPhone(telegramId, userData) {
+    try {
+      const { data, error } = await supabase
+        .from('user_phones')
+        .update({
+          ...userData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('telegram_id', telegramId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Database error - updateUserPhone:', error.message);
+      throw error;
+    }
+  },
+
+  async getUserPhone(telegramId) {
+    try {
+      const { data, error } = await supabase
+        .from('user_phones')
+        .select('*')
+        .eq('telegram_id', telegramId)
+        .eq('is_registered', true)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    } catch (error) {
+      console.error('Database error - getUserPhone:', error.message);
+      return null;
+    }
+  },
+
+  async getUserByPhone(phoneNumber) {
+    try {
+      const { data, error } = await supabase
+        .from('user_phones')
+        .select('*')
+        .eq('phone_number', phoneNumber)
+        .eq('is_registered', true)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    } catch (error) {
+      console.error('Database error - getUserByPhone:', error.message);
+      return null;
+    }
+  },
+
+  async getAllUserPhones() {
+    try {
+      const { data, error } = await supabase
+        .from('user_phones')
+        .select('*')
+        .eq('is_registered', true)
+        .order('registered_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Database error - getAllUserPhones:', error.message);
+      return [];
+    }
   }
 };
 

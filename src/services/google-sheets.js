@@ -33,10 +33,9 @@ class SheetsService {
 
     async updateCells(phoneNumber, fromDate, toDate) {
         try {
-            const range = `${SHEET_NAME}!B1:D2`;
+            const range = `${SHEET_NAME}!B2:D2`;
             const values = [
-                [phoneNumber, '', ''],
-                ['', fromDate, toDate]
+                [phoneNumber, fromDate, toDate] // Only B2, C2, D2
             ];
 
             await this.sheets.spreadsheets.values.update({
@@ -48,7 +47,7 @@ class SheetsService {
                 }
             });
 
-            console.log(`Updated cells: B1=${phoneNumber}, C2=${fromDate}, D2=${toDate}`);
+            console.log(`Updated cells: B2=${phoneNumber}, C2=${fromDate}, D2=${toDate}`);
             return true;
         } catch (error) {
             console.error('Error updating Google Sheets:', error);

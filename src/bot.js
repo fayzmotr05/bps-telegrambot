@@ -11,6 +11,7 @@ const { showProducts, showProductDetails } = require('./handlers/products');
 const { orderScene, startOrder } = require('./handlers/order');
 const { feedbackScene, startFeedback } = require('./handlers/feedback');
 const contactReportScene = require('./handlers/contact-report');
+const phoneRegistrationScene = require('./handlers/phone-registration');
 
 // Import admin handlers
 const { showAdminPanel, showAdminProducts, showAdminOrders, showAdminFeedback, showAdminStats } = require('./handlers/admin');
@@ -22,6 +23,9 @@ const { bulkStockScene, startBulkStock, initInventoryMonitoring } = require('./h
 // Import notification system
 const { initNotifications, testGroupConnection, getGroupChatId } = require('./utils/notifications');
 
+// Import automation services
+const DailyAutomationService = require('./services/daily-automation');
+
 // Validate environment
 if (!process.env.BOT_TOKEN) {
   console.error('❌ BOT_TOKEN is required');
@@ -32,7 +36,7 @@ if (!process.env.BOT_TOKEN) {
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // Create scene stage with all scenes
-const stage = new Scenes.Stage([orderScene, feedbackScene, addProductScene, editProductScene, bulkStockScene, feedbackResponseScene, contactReportScene]);
+const stage = new Scenes.Stage([orderScene, feedbackScene, addProductScene, editProductScene, bulkStockScene, feedbackResponseScene, contactReportScene, phoneRegistrationScene]);
 
 // Middleware
 bot.use(session());
@@ -183,10 +187,11 @@ async function showMainMenu(ctx, userLanguage = null) {
         { text: getMessage('mainMenu.feedback', language) }
       ],
       [
-        { text: getMessage('contact', language) },
-        { text: getMessage('about', language) }
+        { text: getMessage('phoneRegistration.title', language) },
+        { text: getMessage('contact', language) }
       ],
       [
+        { text: getMessage('about', language) },
         { text: getMessage('language', language) }
       ]
     ];
@@ -233,6 +238,15 @@ bot.hears(/^(📊 Hisobot|📊 Отчет|📊 Report)$/, async (ctx) => {
     await ctx.scene.enter('contact-report');
   } catch (error) {
     console.error('Contact report scene error:', error);
+    await ctx.reply('❌ Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
+  }
+});
+
+bot.hears(/^(📱 Telefon ro'yxatdan o'tish|📱 Регистрация телефона|📱 Phone Registration)$/, async (ctx) => {
+  try {
+    await ctx.scene.enter('phone-registration');
+  } catch (error) {
+    console.error('Phone registration scene error:', error);
     await ctx.reply('❌ Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
   }
 });
@@ -514,6 +528,15 @@ async function startBot() {
       console.log('🏭 Inventory monitoring initialized');
     } catch (error) {
       console.log('⚠️ Inventory monitoring failed:', error.message);
+    }
+    
+    // Initialize daily automation service
+    try {
+      const dailyAutomation = new DailyAutomationService(bot);
+      dailyAutomation.init();
+      console.log('📅 Daily automation service initialized');
+    } catch (error) {
+      console.log('⚠️ Daily automation failed:', error.message);
     }
     
     // Test group connections if configured

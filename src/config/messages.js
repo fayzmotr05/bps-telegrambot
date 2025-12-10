@@ -319,6 +319,79 @@ const messages = {
     uz: '🌐 Til',
     ru: '🌐 Язык',
     en: '🌐 Language'
+  },
+
+  // Phone Registration messages
+  phoneRegistration: {
+    title: {
+      uz: '📱 Telefon ro\'yxatdan o\'tish',
+      ru: '📱 Регистрация телефона',
+      en: '📱 Phone Registration'
+    },
+    welcome: {
+      uz: '📱 Telefon raqamingizni ro\'yxatdan o\'tkazish uchun quyidagi tugmani bosing.\n\nBu sizga kunlik hisobotlar olish imkonini beradi.',
+      ru: '📱 Нажмите кнопку ниже, чтобы зарегистрировать номер телефона.\n\nЭто позволит вам получать ежедневные отчеты.',
+      en: '📱 Press the button below to register your phone number.\n\nThis will allow you to receive daily reports.'
+    },
+    sharePhone: {
+      uz: '📱 Telefon raqamini ulashish',
+      ru: '📱 Поделиться номером телефона',
+      en: '📱 Share Phone Number'
+    },
+    processing: {
+      uz: '⏳ Telefon raqamingiz tekshirilmoqda...',
+      ru: '⏳ Проверяем ваш номер телефона...',
+      en: '⏳ Checking your phone number...'
+    },
+    success: {
+      uz: '✅ Telefon raqamingiz muvaffaqiyatli ro\'yxatdan o\'tkazildi!',
+      ru: '✅ Ваш номер телефона успешно зарегистрирован!',
+      en: '✅ Your phone number has been successfully registered!'
+    },
+    alreadyRegistered: {
+      uz: '✅ Siz allaqachon ro\'yxatdan o\'tgansiz.',
+      ru: '✅ Вы уже зарегистрированы.',
+      en: '✅ You are already registered.'
+    },
+    notInDirectory: {
+      uz: '❌ Sizning telefon raqamingiz bizning ma\'lumotlar bazasida topilmadi.\n\nIltimos, admin bilan bog\'laning.',
+      ru: '❌ Ваш номер телефона не найден в нашей базе данных.\n\nПожалуйста, свяжитесь с администратором.',
+      en: '❌ Your phone number was not found in our database.\n\nPlease contact the administrator.'
+    },
+    error: {
+      uz: '❌ Ro\'yxatdan o\'tishda xatolik yuz berdi.',
+      ru: '❌ Ошибка при регистрации.',
+      en: '❌ Registration error occurred.'
+    },
+    ownPhoneOnly: {
+      uz: '❌ Faqat o\'z telefon raqamingizni ro\'yxatdan o\'tkazishingiz mumkin.',
+      ru: '❌ Вы можете зарегистрировать только свой номер телефона.',
+      en: '❌ You can only register your own phone number.'
+    },
+    useContactButton: {
+      uz: '📱 Iltimos, "Telefon raqamini ulashish" tugmasidan foydalaning.',
+      ru: '📱 Пожалуйста, используйте кнопку "Поделиться номером телефона".',
+      en: '📱 Please use the "Share Phone Number" button.'
+    },
+    dailyReports: {
+      uz: '📊 Endi siz har kuni soat 23:50 da avtomatik hisobotlar olasiz.\n\n💡 Istalgan vaqtda "📊 Hisobot" tugmasini bosib, bugun yoki boshqa sanalar uchun hisobot olishingiz mumkin.',
+      ru: '📊 Теперь вы будете получать автоматические отчеты каждый день в 23:50.\n\n💡 Вы также можете нажать кнопку "📊 Отчет" в любое время, чтобы получить отчет за сегодня или другие даты.',
+      en: '📊 You will now receive automatic reports every day at 11:50 PM.\n\n💡 You can also press the "📊 Report" button anytime to get reports for today or other dates.'
+    }
+  },
+
+  // Daily Reports messages  
+  dailyReports: {
+    noDataToday: {
+      uz: '📭 Bugun uchun ma\'lumotlar topilmadi.',
+      ru: '📭 Данные на сегодня не найдены.',
+      en: '📭 No data found for today.'
+    },
+    todayReport: {
+      uz: '📊 Bugungi kunlik hisobot',
+      ru: '📊 Ежедневный отчет на сегодня',
+      en: '📊 Today\'s daily report'
+    }
   }
 };
 

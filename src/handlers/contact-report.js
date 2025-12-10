@@ -1,6 +1,8 @@
 const { Scenes, Markup } = require('telegraf');
 const SheetsService = require('../services/google-sheets');
 const PDFService = require('../services/pdf-generator');
+const UserRegistryService = require('../services/user-registry');
+const PhoneRegistryService = require('../services/phone-registry');
 const messages = require('../config/messages');
 
 const contactReportScene = new Scenes.BaseScene('contact-report');
@@ -11,13 +13,36 @@ contactReportScene.enter(async (ctx) => {
     const lang = ctx.session.language || 'uz';
     
     try {
-        await ctx.reply(
-            messages[lang].contactReport.requestContact,
-            Markup.keyboard([
-                [Markup.button.contactRequest(messages[lang].contactReport.shareContact)],
-                [messages[lang].back]
-            ]).resize()
-        );
+        // Check if user is already registered
+        const isRegistered = await UserRegistryService.isUserRegistered(ctx.from.id);
+        
+        if (isRegistered) {
+            // User is registered, skip phone number collection and go directly to date selection
+            const user = await UserRegistryService.getUserByTelegramId(ctx.from.id);
+            console.log(`📱 Registered user ${user.phone_number} requesting report`);
+            
+            await ctx.reply(
+                messages[lang].contactReport.selectDateRange,
+                Markup.inlineKeyboard([
+                    [
+                        Markup.button.callback(messages[lang].contactReport.today, 'date_today'),
+                        Markup.button.callback(messages[lang].contactReport.customRange, 'date_custom')
+                    ]
+                ])
+            );
+            
+            ctx.session.registeredUser = user;
+            ctx.session.skipPhoneCollection = true;
+        } else {
+            // User not registered, ask for phone number
+            await ctx.reply(
+                messages[lang].contactReport.requestContact,
+                Markup.keyboard([
+                    [Markup.button.contactRequest(messages[lang].contactReport.shareContact)],
+                    [messages[lang].back]
+                ]).resize()
+            );
+        }
     } catch (error) {
         console.error('Error in contact report scene enter:', error);
         await ctx.reply(messages[lang].errors.general);
@@ -71,7 +96,12 @@ contactReportScene.action('date_today', async (ctx) => {
         const fromDate = today.toISOString().split('T')[0];
         const toDate = fromDate;
         
-        await generateReport(ctx, ctx.session.pendingPhoneNumber, fromDate, toDate);
+        // Use phone number from registered user or pending phone number
+        const phoneNumber = ctx.session.registeredUser ? 
+            ctx.session.registeredUser.phone_number : 
+            ctx.session.pendingPhoneNumber;
+        
+        await generateReport(ctx, phoneNumber, fromDate, toDate);
         
     } catch (error) {
         console.error('Error with today date selection:', error);
@@ -133,8 +163,13 @@ contactReportScene.on('text', async (ctx) => {
                 return;
             }
             
+            // Use phone number from registered user or pending phone number
+            const phoneNumber = ctx.session.registeredUser ? 
+                ctx.session.registeredUser.phone_number : 
+                ctx.session.pendingPhoneNumber;
+            
             ctx.session.awaitingToDate = false;
-            await generateReport(ctx, ctx.session.pendingPhoneNumber, fromDate, toDate);
+            await generateReport(ctx, phoneNumber, fromDate, toDate);
             return;
         }
         
@@ -151,13 +186,10 @@ async function generateReport(ctx, phoneNumber, fromDate, toDate) {
     try {
         await ctx.reply(messages[lang].contactReport.generatingReport);
         
-        await SheetsService.updateCells(phoneNumber, fromDate, toDate);
+        // Use the new PhoneRegistryService for better data handling
+        const reportData = await PhoneRegistryService.getTodaysReportData(phoneNumber, fromDate);
         
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-        const reportData = await SheetsService.getReportData();
-        
-        if (!reportData || Object.keys(reportData).length === 0) {
+        if (!reportData || Object.keys(reportData.calculatedData || {}).length === 0) {
             await ctx.reply(messages[lang].contactReport.noDataFound);
             reportQueue.delete(phoneNumber);
             await ctx.scene.leave();
@@ -182,6 +214,9 @@ async function generateReport(ctx, phoneNumber, fromDate, toDate) {
         reportQueue.delete(phoneNumber);
         await ctx.reply(messages[lang].contactReport.errorGenerating);
         await ctx.scene.leave();
+    } finally {
+        // Always clean up
+        await PhoneRegistryService.cleanupReportData();
     }
 }
 
