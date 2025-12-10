@@ -40,7 +40,33 @@ class PhoneRegistryService {
             // Read columns Q (names) and R (phones) from row 2 onwards
             const range = `${DIRECTORY_SHEET_NAME}!Q2:R`;
             
-            console.log('📚 Making Google Sheets API call...');
+            // First, test basic connectivity by trying to read A1
+            console.log('🧪 Testing basic Google Sheets connectivity...');
+            try {
+                const testResponse = await this.sheets.spreadsheets.values.get({
+                    spreadsheetId: SHEET_ID,
+                    range: 'A1:A1'
+                });
+                console.log('✅ Basic Google Sheets access working');
+            } catch (testError) {
+                console.error('❌ Basic Google Sheets access failed:', testError.message);
+                throw new Error(`Google Sheets access failed: ${testError.message}`);
+            }
+            
+            // Test if the specific sheet exists
+            console.log('🧪 Testing sheet existence...');
+            try {
+                const sheetTestResponse = await this.sheets.spreadsheets.values.get({
+                    spreadsheetId: SHEET_ID,
+                    range: `${DIRECTORY_SHEET_NAME}!A1:A1`
+                });
+                console.log('✅ Sheet "📚 Справочники" exists and is accessible');
+            } catch (sheetError) {
+                console.error('❌ Sheet access failed:', sheetError.message);
+                throw new Error(`Sheet "${DIRECTORY_SHEET_NAME}" not accessible: ${sheetError.message}`);
+            }
+            
+            console.log('📚 Making Google Sheets API call for phone data...');
             const response = await this.sheets.spreadsheets.values.get({
                 spreadsheetId: SHEET_ID,
                 range: range
@@ -54,11 +80,28 @@ class PhoneRegistryService {
             console.log(`📚 Raw rows from sheet: ${rows.length} rows`);
             
             if (rows.length === 0) {
-                console.log('❌ No rows returned from Google Sheets!');
-                console.log('📚 This could mean:');
-                console.log('  1. The sheet name "📚 Справочники" doesn\'t exist');
-                console.log('  2. Columns Q and R are empty');
-                console.log('  3. There\'s a permissions issue');
+                console.log('❌ No rows returned from Q2:R range!');
+                
+                // Try to read a broader range to see if there's any data
+                console.log('🧪 Trying broader range Q1:R10 to check for any data...');
+                try {
+                    const broadResponse = await this.sheets.spreadsheets.values.get({
+                        spreadsheetId: SHEET_ID,
+                        range: `${DIRECTORY_SHEET_NAME}!Q1:R10`
+                    });
+                    const broadRows = broadResponse.data.values || [];
+                    console.log(`📊 Broader range Q1:R10 returned ${broadRows.length} rows:`);
+                    broadRows.forEach((row, index) => {
+                        console.log(`  Row ${index + 1}: Q="${row[0] || 'empty'}" R="${row[1] || 'empty'}"`);
+                    });
+                } catch (broadError) {
+                    console.error('❌ Broader range test failed:', broadError.message);
+                }
+                
+                console.log('📚 Possible issues:');
+                console.log('  1. Columns Q and R are empty from row 2 onwards');
+                console.log('  2. Data starts from a different row');
+                console.log('  3. Phone numbers are in a different column');
                 console.log('  4. The range Q2:R doesn\'t contain data');
                 return [];
             }
