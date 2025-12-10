@@ -3,7 +3,7 @@ const SheetsService = require('../services/google-sheets');
 const PDFService = require('../services/pdf-generator');
 const UserRegistryService = require('../services/user-registry');
 const PhoneRegistryService = require('../services/phone-registry');
-const messages = require('../config/messages');
+const { getMessage } = require('../config/messages');
 
 const contactReportScene = new Scenes.BaseScene('contact-report');
 
@@ -22,11 +22,11 @@ contactReportScene.enter(async (ctx) => {
             console.log(`📱 Registered user ${user.phone_number} requesting report`);
             
             await ctx.reply(
-                messages[lang].contactReport.selectDateRange,
+                getMessage('contactReport.selectDateRange', lang),
                 Markup.inlineKeyboard([
                     [
-                        Markup.button.callback(messages[lang].contactReport.today, 'date_today'),
-                        Markup.button.callback(messages[lang].contactReport.customRange, 'date_custom')
+                        Markup.button.callback(getMessage('contactReport.today', lang), 'date_today'),
+                        Markup.button.callback(getMessage('contactReport.customRange', lang), 'date_custom')
                     ]
                 ])
             );
@@ -36,16 +36,16 @@ contactReportScene.enter(async (ctx) => {
         } else {
             // User not registered, ask for phone number
             await ctx.reply(
-                messages[lang].contactReport.requestContact,
+                getMessage('contactReport.requestContact', lang),
                 Markup.keyboard([
-                    [Markup.button.contactRequest(messages[lang].contactReport.shareContact)],
-                    [messages[lang].back]
+                    [Markup.button.contactRequest(getMessage('contactReport.shareContact', lang))],
+                    [getMessage('back', lang)]
                 ]).resize()
             );
         }
     } catch (error) {
         console.error('Error in contact report scene enter:', error);
-        await ctx.reply(messages[lang].errors.general);
+        await ctx.reply(getMessage('errors.general', lang));
         await ctx.scene.leave();
     }
 });
@@ -58,20 +58,20 @@ contactReportScene.on('contact', async (ctx) => {
         const userId = ctx.from.id;
         
         if (reportQueue.has(phoneNumber)) {
-            await ctx.reply(messages[lang].contactReport.alreadyProcessing);
+            await ctx.reply(getMessage('contactReport.alreadyProcessing', lang));
             return;
         }
         
         reportQueue.set(phoneNumber, { userId, status: 'processing', timestamp: Date.now() });
         
-        await ctx.reply(messages[lang].contactReport.processing);
+        await ctx.reply(getMessage('contactReport.processing', lang));
         
         await ctx.reply(
-            messages[lang].contactReport.selectDateRange,
+            getMessage('contactReport.selectDateRange', lang),
             Markup.inlineKeyboard([
                 [
-                    Markup.button.callback(messages[lang].contactReport.today, 'date_today'),
-                    Markup.button.callback(messages[lang].contactReport.customRange, 'date_custom')
+                    Markup.button.callback(getMessage('contactReport.today', lang), 'date_today'),
+                    Markup.button.callback(getMessage('contactReport.customRange', lang), 'date_custom')
                 ]
             ])
         );
@@ -81,7 +81,7 @@ contactReportScene.on('contact', async (ctx) => {
     } catch (error) {
         console.error('Error processing contact:', error);
         reportQueue.delete(ctx.session.pendingPhoneNumber);
-        await ctx.reply(messages[lang].errors.general);
+        await ctx.reply(getMessage('errors.general', lang));
         await ctx.scene.leave();
     }
 });
@@ -105,7 +105,7 @@ contactReportScene.action('date_today', async (ctx) => {
         
     } catch (error) {
         console.error('Error with today date selection:', error);
-        await ctx.reply(messages[lang].errors.general);
+        await ctx.reply(getMessage('errors.general', lang));
         await ctx.scene.leave();
     }
 });
@@ -115,12 +115,12 @@ contactReportScene.action('date_custom', async (ctx) => {
     
     try {
         await ctx.answerCbQuery();
-        await ctx.reply(messages[lang].contactReport.enterFromDate);
+        await ctx.reply(getMessage('contactReport.enterFromDate', lang));
         ctx.session.awaitingFromDate = true;
         
     } catch (error) {
         console.error('Error with custom date selection:', error);
-        await ctx.reply(messages[lang].errors.general);
+        await ctx.reply(getMessage('errors.general', lang));
         await ctx.scene.leave();
     }
 });
@@ -129,7 +129,7 @@ contactReportScene.on('text', async (ctx) => {
     const lang = ctx.session.language || 'uz';
     
     try {
-        if (ctx.message.text === messages[lang].back) {
+        if (ctx.message.text === getMessage('back', lang)) {
             reportQueue.delete(ctx.session.pendingPhoneNumber);
             await ctx.scene.leave();
             return;
@@ -138,20 +138,20 @@ contactReportScene.on('text', async (ctx) => {
         if (ctx.session.awaitingFromDate) {
             const dateText = ctx.message.text.trim();
             if (!isValidDate(dateText)) {
-                await ctx.reply(messages[lang].contactReport.invalidDate);
+                await ctx.reply(getMessage('contactReport.invalidDate', lang));
                 return;
             }
             ctx.session.fromDate = dateText;
             ctx.session.awaitingFromDate = false;
             ctx.session.awaitingToDate = true;
-            await ctx.reply(messages[lang].contactReport.enterToDate);
+            await ctx.reply(getMessage('contactReport.enterToDate', lang));
             return;
         }
         
         if (ctx.session.awaitingToDate) {
             const dateText = ctx.message.text.trim();
             if (!isValidDate(dateText)) {
-                await ctx.reply(messages[lang].contactReport.invalidDate);
+                await ctx.reply(getMessage('contactReport.invalidDate', lang));
                 return;
             }
             
@@ -159,7 +159,7 @@ contactReportScene.on('text', async (ctx) => {
             const toDate = dateText;
             
             if (new Date(toDate) < new Date(fromDate)) {
-                await ctx.reply(messages[lang].contactReport.invalidDateRange);
+                await ctx.reply(getMessage('contactReport.invalidDateRange', lang));
                 return;
             }
             
@@ -175,7 +175,7 @@ contactReportScene.on('text', async (ctx) => {
         
     } catch (error) {
         console.error('Error processing text in contact report:', error);
-        await ctx.reply(messages[lang].errors.general);
+        await ctx.reply(getMessage('errors.general', lang));
         await ctx.scene.leave();
     }
 });
@@ -184,13 +184,13 @@ async function generateReport(ctx, phoneNumber, fromDate, toDate) {
     const lang = ctx.session.language || 'uz';
     
     try {
-        await ctx.reply(messages[lang].contactReport.generatingReport);
+        await ctx.reply(getMessage('contactReport.generatingReport', lang));
         
         // Use the new PhoneRegistryService for better data handling
         const reportData = await PhoneRegistryService.getTodaysReportData(phoneNumber, fromDate);
         
         if (!reportData || Object.keys(reportData.calculatedData || {}).length === 0) {
-            await ctx.reply(messages[lang].contactReport.noDataFound);
+            await ctx.reply(getMessage('contactReport.noDataFound', lang));
             reportQueue.delete(phoneNumber);
             await ctx.scene.leave();
             return;
@@ -200,19 +200,19 @@ async function generateReport(ctx, phoneNumber, fromDate, toDate) {
         
         await ctx.replyWithDocument(
             { source: pdfPath },
-            { caption: messages[lang].contactReport.reportGenerated }
+            { caption: getMessage('contactReport.reportGenerated', lang) }
         );
         
         await PDFService.cleanup(pdfPath);
         
         reportQueue.delete(phoneNumber);
-        await ctx.reply(messages[lang].contactReport.completed);
+        await ctx.reply(getMessage('contactReport.completed', lang));
         await ctx.scene.leave();
         
     } catch (error) {
         console.error('Error generating report:', error);
         reportQueue.delete(phoneNumber);
-        await ctx.reply(messages[lang].contactReport.errorGenerating);
+        await ctx.reply(getMessage('contactReport.errorGenerating', lang));
         await ctx.scene.leave();
     } finally {
         // Always clean up
@@ -241,11 +241,11 @@ contactReportScene.leave(async (ctx) => {
         }
         
         await ctx.reply(
-            messages[lang].mainMenu,
+            getMessage('mainMenuTitle', lang),
             Markup.keyboard([
-                [messages[lang].order, messages[lang].myOrders],
-                [messages[lang].contactReport.title, messages[lang].about],
-                [messages[lang].contact, messages[lang].language]
+                [getMessage('order', lang), getMessage('myOrders', lang)],
+                [getMessage('contactReport.title', lang), getMessage('about', lang)],
+                [getMessage('contact', lang), getMessage('language', lang)]
             ]).resize()
         );
         
