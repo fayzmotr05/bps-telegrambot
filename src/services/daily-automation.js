@@ -88,6 +88,10 @@ class DailyAutomationService {
         try {
             console.log(`📤 Sending daily report to ${user.phone_number} (${user.telegram_id})`);
 
+            // Get phone registry check to extract client name
+            const phoneCheckResult = await PhoneRegistryService.checkPhoneAndGetTodaysReport(user.phone_number);
+            const clientName = phoneCheckResult.phoneEntry?.clientName || null;
+            
             // Get today's report data
             const reportData = await PhoneRegistryService.getTodaysReportData(user.phone_number, dateStr);
 
@@ -103,19 +107,23 @@ class DailyAutomationService {
                 return;
             }
 
-            // Generate Excel report
+            // Generate Excel report with client name
             const language = user.language_code || 'uz';
             const excelPath = await ExcelReportService.generateReport(
                 reportData,
                 user.phone_number,
                 dateStr,
                 dateStr,
-                language
+                language,
+                clientName
             );
 
-            // Send Excel report to user
-            const caption = getMessage('dailyReports.todayReport', language) || 
+            // Send Excel report to user with personalized message
+            const baseCaption = getMessage('dailyReports.todayReport', language) || 
                 `📊 Bugungi hisobot - ${this.formatDate(dateStr)}`;
+            const caption = clientName ? 
+                `${clientName}, ${baseCaption.toLowerCase()}` : 
+                baseCaption;
 
             await this.bot.telegram.sendDocument(
                 user.telegram_id,

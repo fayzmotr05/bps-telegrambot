@@ -186,7 +186,17 @@ async function generateReport(ctx, phoneNumber, fromDate, toDate) {
     try {
         await ctx.reply(getMessage('contactReport.generatingReport', lang));
         
-        // Use the new PhoneRegistryService for better data handling
+        // Get both phone registry check and report data to extract client name
+        const phoneCheckResult = await PhoneRegistryService.checkPhoneAndGetTodaysReport(phoneNumber);
+        
+        if (!phoneCheckResult.registered || !phoneCheckResult.reportData) {
+            await ctx.reply(getMessage('contactReport.noDataFound', lang));
+            reportQueue.delete(phoneNumber);
+            await ctx.scene.leave();
+            return;
+        }
+        
+        // Get the report data for the specific date range
         const reportData = await PhoneRegistryService.getTodaysReportData(phoneNumber, fromDate, toDate);
         
         if (!reportData || Object.keys(reportData.calculatedData || {}).length === 0) {
@@ -196,7 +206,10 @@ async function generateReport(ctx, phoneNumber, fromDate, toDate) {
             return;
         }
         
-        const excelPath = await ExcelReportService.generateReport(reportData, phoneNumber, fromDate, toDate, lang);
+        // Extract client name from phone entry
+        const clientName = phoneCheckResult.phoneEntry?.clientName || null;
+        
+        const excelPath = await ExcelReportService.generateReport(reportData, phoneNumber, fromDate, toDate, lang, clientName);
         
         await ctx.replyWithDocument(
             { source: excelPath },
@@ -206,7 +219,13 @@ async function generateReport(ctx, phoneNumber, fromDate, toDate) {
         await ExcelReportService.cleanup(excelPath);
         
         reportQueue.delete(phoneNumber);
-        await ctx.reply(getMessage('contactReport.completed', lang));
+        
+        // Personalized completion message with client name
+        const completionMessage = clientName ? 
+            `✅ ${clientName}, hisobotingiz tayyor!` :
+            getMessage('contactReport.completed', lang);
+            
+        await ctx.reply(completionMessage);
         await ctx.scene.leave();
         
     } catch (error) {
