@@ -357,8 +357,10 @@ class PhoneRegistryService {
         }
     }
 
-    // Get today's report data for a specific phone
-    async getTodaysReportData(phoneNumber, dateStr) {
+    // Get report data for a specific phone and date range
+    async getTodaysReportData(phoneNumber, fromDateStr, toDateStr = null) {
+        // If no toDate provided, use fromDate (for single day reports)
+        const endDateStr = toDateStr || fromDateStr;
         try {
             // Write phone in B1, dates in C2 and D2
             await this.sheets.spreadsheets.values.update({
@@ -378,7 +380,7 @@ class PhoneRegistryService {
                 valueInputOption: 'USER_ENTERED',
                 resource: {
                     values: [
-                        [dateStr, dateStr] // Dates in C2 and D2
+                        [fromDateStr, endDateStr] // From date in C2, to date in D2
                     ]
                 }
             });

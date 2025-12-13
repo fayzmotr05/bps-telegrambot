@@ -187,7 +187,7 @@ async function generateReport(ctx, phoneNumber, fromDate, toDate) {
         await ctx.reply(getMessage('contactReport.generatingReport', lang));
         
         // Use the new PhoneRegistryService for better data handling
-        const reportData = await PhoneRegistryService.getTodaysReportData(phoneNumber, fromDate);
+        const reportData = await PhoneRegistryService.getTodaysReportData(phoneNumber, fromDate, toDate);
         
         if (!reportData || Object.keys(reportData.calculatedData || {}).length === 0) {
             await ctx.reply(getMessage('contactReport.noDataFound', lang));
