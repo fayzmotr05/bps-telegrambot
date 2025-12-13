@@ -1,8 +1,7 @@
 const PDFDocument = require('pdfkit');
 const path = require('path');
-const fs = require('fs').promises;
-const { pipeline } = require('stream');
-const { promisify } = require('util');
+const fs = require('fs');
+const fsPromises = require('fs').promises;
 
 const pipelineAsync = promisify(pipeline);
 
@@ -27,7 +26,7 @@ class ProfessionalPDFService {
             const filePath = path.join(__dirname, '../temp', fileName);
             
             // Ensure temp directory exists
-            await fs.mkdir(path.dirname(filePath), { recursive: true });
+            await fsPromises.mkdir(path.dirname(filePath), { recursive: true });
             
             // Create PDF document
             const doc = new PDFDocument({
@@ -302,7 +301,7 @@ class ProfessionalPDFService {
 
     async cleanup(filePath) {
         try {
-            await fs.unlink(filePath);
+            await fsPromises.unlink(filePath);
             console.log(`🧹 Cleaned up temporary file: ${filePath}`);
         } catch (error) {
             console.error('❌ Error cleaning up file:', error);
