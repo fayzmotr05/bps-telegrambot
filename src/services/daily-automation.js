@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const UserRegistryService = require('./user-registry');
 const PhoneRegistryService = require('./phone-registry');
-const PDFService = require('./pdf-generator-professional');
+const TextReportService = require('./text-report-generator');
 const { getMessage } = require('../config/messages');
 
 class DailyAutomationService {
@@ -103,9 +103,9 @@ class DailyAutomationService {
                 return;
             }
 
-            // Generate PDF report
+            // Generate text report
             const language = user.language_code || 'uz';
-            const pdfPath = await PDFService.generateReport(
+            const textReport = await TextReportService.generateReport(
                 reportData,
                 user.phone_number,
                 dateStr,
@@ -113,18 +113,15 @@ class DailyAutomationService {
                 language
             );
 
-            // Send PDF to user
+            // Send text report to user
             const caption = getMessage('dailyReports.todayReport', language) || 
                 `📊 Bugungi hisobot - ${this.formatDate(dateStr)}`;
 
-            await this.bot.telegram.sendDocument(
+            await this.bot.telegram.sendMessage(
                 user.telegram_id,
-                { source: pdfPath },
-                { caption: caption }
+                `${caption}\n\n\`\`\`\n${textReport}\n\`\`\``,
+                { parse_mode: 'Markdown' }
             );
-
-            // Clean up PDF file
-            await PDFService.cleanup(pdfPath);
 
             console.log(`✅ Daily report sent successfully to ${user.phone_number}`);
 
