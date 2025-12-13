@@ -28,37 +28,39 @@ class GoogleAuthService {
                 'https://www.googleapis.com/auth/drive.readonly'
             ];
 
-            if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
-                console.log('📊 Creating service account credentials from environment variables');
+            if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+                console.log('📊 Using GOOGLE_SERVICE_ACCOUNT JSON credentials');
+                
+                const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+                console.log('🔑 Service account email:', credentials.client_email);
+                console.log('🔑 Project ID:', credentials.project_id);
+                
+                this.auth = new google.auth.GoogleAuth({
+                    credentials: credentials,
+                    scopes: scopes
+                });
+                
+            } else if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
+                console.log('📊 Using individual environment variables');
                 
                 // Create service account object from environment variables
                 const serviceAccount = {
                     type: "service_account",
-                    project_id: "bps-telegram-bot", // Extracted from email
-                    private_key_id: "key-id", // Not critical for authentication
+                    project_id: "bps-telegram-bot",
+                    private_key_id: "dummy-key-id",
                     private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
                     client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-                    client_id: "client-id", // Not critical for authentication
+                    client_id: "dummy-client-id",
                     auth_uri: "https://accounts.google.com/o/oauth2/auth",
-                    token_uri: "https://oauth2.googleapis.com/token"
+                    token_uri: "https://oauth2.googleapis.com/token",
+                    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs"
                 };
                 
                 console.log('🔑 Service account email:', serviceAccount.client_email);
                 console.log('🔑 Private key length:', serviceAccount.private_key.length);
-                console.log('🔑 Private key starts properly:', serviceAccount.private_key.startsWith('-----BEGIN PRIVATE KEY-----'));
-                console.log('🔑 Private key ends properly:', serviceAccount.private_key.endsWith('-----END PRIVATE KEY-----'));
                 
                 this.auth = new google.auth.GoogleAuth({
                     credentials: serviceAccount,
-                    scopes: scopes
-                });
-                
-            } else if (process.env.GOOGLE_SERVICE_ACCOUNT) {
-                console.log('📊 Using GoogleAuth with service account JSON');
-                
-                const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-                this.auth = new google.auth.GoogleAuth({
-                    credentials: credentials,
                     scopes: scopes
                 });
                 
@@ -110,21 +112,48 @@ class GoogleAuthService {
      * Get access token for API calls
      */
     async getAccessToken() {
-        if (!this.auth) {
-            await this.initialize();
-        }
+        try {
+            if (!this.auth) {
+                await this.initialize();
+            }
 
-        if (this.auth.getAccessToken) {
-            // GoogleAuth method
-            const tokenResponse = await this.auth.getAccessToken();
-            return tokenResponse.token;
-        } else if (this.auth.request) {
-            // JWT method
-            const headers = await this.auth.getRequestHeaders();
-            return headers.authorization.replace('Bearer ', '');
+            console.log('🔑 Getting access token...');
+            console.log('📋 Auth object type:', this.auth.constructor.name);
+
+            if (this.auth.getAccessToken) {
+                // GoogleAuth method
+                console.log('📊 Using GoogleAuth.getAccessToken() method');
+                const tokenResponse = await this.auth.getAccessToken();
+                console.log('✅ Token response received, length:', tokenResponse.token?.length || 0);
+                return tokenResponse.token;
+            } else if (this.auth.request) {
+                // JWT method
+                console.log('📊 Using JWT.getRequestHeaders() method');
+                const headers = await this.auth.getRequestHeaders();
+                const token = headers.authorization?.replace('Bearer ', '');
+                console.log('✅ JWT token extracted, length:', token?.length || 0);
+                return token;
+            }
+            
+            throw new Error('Unable to get access token from auth object - no suitable method found');
+            
+        } catch (error) {
+            console.error('❌ Access token error details:');
+            console.error('  - Error message:', error.message);
+            console.error('  - Error code:', error.code);
+            console.error('  - Error stack:', error.stack?.split('\n')[0]);
+            
+            // Check for specific error types
+            if (error.message?.includes('ENOTFOUND') || error.message?.includes('ECONNREFUSED')) {
+                console.error('🌐 Network connectivity issue detected');
+            } else if (error.message?.includes('unauthorized') || error.message?.includes('403')) {
+                console.error('🔒 Authorization issue - check service account permissions');
+            } else if (error.message?.includes('400')) {
+                console.error('📝 Bad request - check service account configuration');
+            }
+            
+            throw error;
         }
-        
-        throw new Error('Unable to get access token from auth object');
     }
 
     /**

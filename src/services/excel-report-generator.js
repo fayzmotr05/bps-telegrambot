@@ -84,52 +84,40 @@ class ExcelReportService {
             console.log('📡 Making HTTP request to Google Sheets...');
             
             const request = protocol.get(url, options, (response) => {
-                console.log(`📊 Response status: ${response.statusCode} ${response.statusMessage}`);
-                console.log('📋 Response headers:', JSON.stringify(response.headers, null, 2));
+                console.log(`📊 Response status: ${response.statusCode}`);
                 
                 if (response.statusCode === 302 || response.statusCode === 301) {
                     // Handle redirects
-                    console.log('🔄 Following redirect to:', response.headers.location);
+                    console.log('🔄 Following redirect');
                     return this.downloadFile(response.headers.location, filePath, accessToken)
                         .then(resolve)
                         .catch(reject);
                 }
                 
                 if (response.statusCode !== 200) {
-                    console.error(`❌ Download failed with status ${response.statusCode}`);
-                    console.error('📋 Response headers:', response.headers);
-                    
-                    // Try to read error response body
-                    let errorBody = '';
-                    response.on('data', chunk => errorBody += chunk);
-                    response.on('end', () => {
-                        console.error('❌ Error response body:', errorBody);
-                        reject(new Error(`Failed to download file: ${response.statusCode} ${response.statusMessage}\nResponse: ${errorBody}`));
-                    });
+                    console.error(`❌ Download failed: ${response.statusCode}`);
+                    reject(new Error(`Failed to download file: ${response.statusCode} ${response.statusMessage}`));
                     return;
                 }
 
-                console.log('✅ Starting file write stream...');
+                console.log('✅ Starting download...');
                 const fileStream = require('fs').createWriteStream(filePath);
                 
                 let downloadedBytes = 0;
                 response.on('data', (chunk) => {
                     downloadedBytes += chunk.length;
-                    if (downloadedBytes % 10240 === 0) { // Log every 10KB
-                        console.log(`⬇️ Downloaded ${downloadedBytes} bytes...`);
-                    }
                 });
                 
                 response.pipe(fileStream);
                 
                 fileStream.on('finish', () => {
                     fileStream.close();
-                    console.log(`✅ Download completed! Total bytes: ${downloadedBytes}`);
+                    console.log(`✅ Downloaded ${downloadedBytes} bytes`);
                     resolve();
                 });
                 
                 fileStream.on('error', (err) => {
-                    console.error('❌ File stream error:', err);
+                    console.error('❌ File error:', err.message);
                     require('fs').unlink(filePath, () => {}); // Clean up on error
                     reject(err);
                 });
