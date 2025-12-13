@@ -43,6 +43,16 @@ phoneRegistrationScene.on('contact', async (ctx) => {
         const contact = ctx.message.contact;
         const phoneNumber = contact.phone_number;
         
+        // Detailed logging for phone format debugging
+        console.log('📱 === TELEGRAM PHONE REGISTRATION DEBUG ===');
+        console.log('📱 User:', ctx.from.first_name, ctx.from.last_name);
+        console.log('📱 Telegram ID:', ctx.from.id);
+        console.log('📱 Raw phone from Telegram:', phoneNumber);
+        console.log('📱 Phone type:', typeof phoneNumber);
+        console.log('📱 Phone length:', phoneNumber ? phoneNumber.length : 0);
+        console.log('📱 Contact object:', JSON.stringify(contact, null, 2));
+        console.log('📱 === END TELEGRAM DEBUG ===');
+        
         // Only allow users to register their own phone number
         if (contact.user_id && contact.user_id !== ctx.from.id) {
             await ctx.reply(getMessage('phoneRegistration.ownPhoneOnly', lang) || '❌ Faqat o\'z telefon raqamingizni ro\'yxatdan o\'tkazishingiz mumkin.');

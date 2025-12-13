@@ -6,10 +6,20 @@ class UserRegistryService {
     // Register user phone number with their Telegram ID
     async registerUserPhone(telegramId, phoneNumber, firstName, lastName, username) {
         try {
-            console.log(`📱 Registering phone ${phoneNumber} for user ${telegramId}`);
+            console.log('📱 === USER REGISTRY DEBUG ===');
+            console.log(`📱 Registering phone for user ${telegramId}`);
+            console.log(`📱 Input phone: "${phoneNumber}"`);
+            console.log(`📱 Input phone type: ${typeof phoneNumber}`);
+            console.log(`📱 Input phone length: ${phoneNumber ? phoneNumber.length : 0}`);
+            console.log(`📱 User: ${firstName} ${lastName} (@${username})`);
+            console.log('📱 === CALLING PHONE REGISTRY CHECK ===');
             
             // Check if phone is in the registry first
             const phoneCheck = await PhoneRegistryService.checkPhoneAndGetTodaysReport(phoneNumber);
+            
+            console.log('📱 === PHONE REGISTRY RESULT ===');
+            console.log('📱 Phone check result:', JSON.stringify(phoneCheck, null, 2));
+            console.log('📱 === END USER REGISTRY DEBUG ===');
             
             if (!phoneCheck.registered) {
                 return {
