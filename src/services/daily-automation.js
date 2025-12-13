@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const UserRegistryService = require('./user-registry');
 const PhoneRegistryService = require('./phone-registry');
-const PDFService = require('./pdf-generator');
+const PDFService = require('./pdf-generator-professional');
 const { getMessage } = require('../config/messages');
 
 class DailyAutomationService {
