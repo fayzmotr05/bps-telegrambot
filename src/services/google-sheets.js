@@ -9,9 +9,17 @@ class SheetsService {
     constructor() {
         let auth;
         
-        // Check if running in production (Railway) with environment variable
-        if (process.env.GOOGLE_SERVICE_ACCOUNT) {
-            console.log('Using Google credentials from environment variable');
+        // Check if running in production with standard environment variables
+        if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
+            console.log('Using Google credentials from environment variables');
+            auth = new google.auth.JWT(
+                process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+                null,
+                process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+                ['https://www.googleapis.com/auth/spreadsheets']
+            );
+        } else if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+            console.log('Using Google credentials from GOOGLE_SERVICE_ACCOUNT environment variable');
             const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
             auth = new google.auth.GoogleAuth({
                 credentials: credentials,
