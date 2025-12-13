@@ -9,8 +9,23 @@ class PhoneRegistryService {
     constructor() {
         let auth;
         
+        // Debug environment variables
+        console.log('🔧 === GOOGLE AUTH ENVIRONMENT DEBUG ===');
+        console.log('🔧 GOOGLE_PRIVATE_KEY exists:', !!process.env.GOOGLE_PRIVATE_KEY);
+        console.log('🔧 GOOGLE_SERVICE_ACCOUNT_EMAIL exists:', !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
+        console.log('🔧 GOOGLE_SERVICE_ACCOUNT exists:', !!process.env.GOOGLE_SERVICE_ACCOUNT);
+        console.log('🔧 NODE_ENV:', process.env.NODE_ENV);
+        if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
+            console.log('🔧 GOOGLE_SERVICE_ACCOUNT_EMAIL value:', process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
+        }
+        if (process.env.GOOGLE_PRIVATE_KEY) {
+            console.log('🔧 GOOGLE_PRIVATE_KEY length:', process.env.GOOGLE_PRIVATE_KEY.length);
+            console.log('🔧 GOOGLE_PRIVATE_KEY starts with:', process.env.GOOGLE_PRIVATE_KEY.substring(0, 50));
+        }
+        console.log('🔧 === END GOOGLE AUTH DEBUG ===');
+        
         if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
-            console.log('Using Google credentials from environment variables');
+            console.log('Using Google credentials from environment variables (GOOGLE_PRIVATE_KEY + GOOGLE_SERVICE_ACCOUNT_EMAIL)');
             auth = new google.auth.JWT(
                 process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
                 null,
@@ -25,7 +40,7 @@ class PhoneRegistryService {
                 scopes: ['https://www.googleapis.com/auth/spreadsheets']
             });
         } else {
-            console.log('Using Google credentials from local file');
+            console.log('❌ No Google credentials found in environment variables, falling back to local file');
             const credentialsPath = path.join(__dirname, '../../bps-user-data-bot-dc3f9a88a80d.json');
             auth = new google.auth.GoogleAuth({
                 keyFile: credentialsPath,
