@@ -1,6 +1,6 @@
 const { Scenes, Markup } = require('telegraf');
 const SheetsService = require('../services/google-sheets');
-const PDFService = require('../services/pdf-generator');
+const PDFService = require('../services/pdf-generator-simple');
 const UserRegistryService = require('../services/user-registry');
 const PhoneRegistryService = require('../services/phone-registry');
 const { getMessage } = require('../config/messages');
