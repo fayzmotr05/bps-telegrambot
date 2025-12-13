@@ -30,21 +30,21 @@ class PhoneRegistryService {
                 process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
                 null,
                 process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-                ['https://www.googleapis.com/auth/spreadsheets']
+                ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly']
             );
         } else if (process.env.GOOGLE_SERVICE_ACCOUNT) {
             console.log('Using Google credentials from GOOGLE_SERVICE_ACCOUNT environment variable');
             const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
             auth = new google.auth.GoogleAuth({
                 credentials: credentials,
-                scopes: ['https://www.googleapis.com/auth/spreadsheets']
+                scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly']
             });
         } else {
             console.log('❌ No Google credentials found in environment variables, falling back to local file');
             const credentialsPath = path.join(__dirname, '../../bps-user-data-bot-dc3f9a88a80d.json');
             auth = new google.auth.GoogleAuth({
                 keyFile: credentialsPath,
-                scopes: ['https://www.googleapis.com/auth/spreadsheets']
+                scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly']
             });
         }
         

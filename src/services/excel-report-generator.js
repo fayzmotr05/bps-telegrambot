@@ -1,40 +1,25 @@
 const path = require('path');
 const fs = require('fs').promises;
-const { google } = require('googleapis');
 const https = require('https');
 const http = require('http');
 const XLSX = require('xlsx');
+const GoogleAuthService = require('./google-auth');
 
 class ExcelReportService {
     constructor() {
         this.auth = null;
     }
 
-    setupAuth() {
+    async setupAuth() {
         if (this.auth) return; // Already set up
         
         try {
-            if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
-                console.log('📊 Setting up Google credentials for Excel export');
-                this.auth = new google.auth.JWT(
-                    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-                    null,
-                    process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-                    ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly']
-                );
-            } else if (process.env.GOOGLE_SERVICE_ACCOUNT) {
-                console.log('📊 Setting up Google credentials from GOOGLE_SERVICE_ACCOUNT');
-                const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-                this.auth = new google.auth.GoogleAuth({
-                    credentials: credentials,
-                    scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly']
-                });
-            } else {
-                console.log('⚠️ No Google credentials found for Excel export - will fallback to text report');
-                this.auth = null;
-            }
+            console.log('🔐 Setting up unified Google authentication for Excel export');
+            this.auth = await GoogleAuthService.initialize();
+            console.log('✅ Excel export authentication ready');
         } catch (error) {
             console.error('❌ Error setting up Google auth for Excel export:', error);
+            console.log('📝 Will fallback to beautiful Excel generation instead');
             this.auth = null;
         }
     }
@@ -42,7 +27,7 @@ class ExcelReportService {
     async generateReport(reportData, phoneNumber, fromDate, toDate, language = 'uz', clientName = null) {
         try {
             // Setup auth only when needed
-            this.setupAuth();
+            await this.setupAuth();
             
             if (!this.auth) {
                 console.log('⚠️ Google Sheets export not available, generating beautiful Excel report');
@@ -70,6 +55,9 @@ class ExcelReportService {
             const exportUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx&gid=0`;
             
             console.log('📥 Downloading formatted Excel file from Google Sheets...');
+            console.log('🔗 Export URL:', exportUrl);
+            console.log('🔑 Using access token length:', accessToken.length);
+            
             await this.downloadFile(exportUrl, filePath, accessToken);
             
             console.log(`✅ Google Sheets Excel file downloaded: ${filePath}`);
@@ -92,15 +80,10 @@ class ExcelReportService {
 
     async getAccessToken() {
         try {
-            if (this.auth.getAccessToken) {
-                const tokenResponse = await this.auth.getAccessToken();
-                return tokenResponse.token;
-            } else if (this.auth.request) {
-                // JWT auth
-                const headers = await this.auth.getRequestHeaders();
-                return headers.authorization.replace('Bearer ', '');
-            }
-            throw new Error('Unable to get access token');
+            console.log('🔑 Getting access token for Google Sheets download...');
+            const token = await GoogleAuthService.getAccessToken();
+            console.log('✅ Access token retrieved successfully');
+            return token;
         } catch (error) {
             console.error('❌ Error getting access token:', error);
             throw error;
@@ -109,6 +92,8 @@ class ExcelReportService {
 
     async downloadFile(url, filePath, accessToken) {
         return new Promise((resolve, reject) => {
+            console.log('⬇️ Starting file download...');
+            
             const protocol = url.startsWith('https:') ? https : http;
             
             const options = {
@@ -118,29 +103,69 @@ class ExcelReportService {
                 }
             };
 
+            console.log('📡 Making HTTP request to Google Sheets...');
+            
             const request = protocol.get(url, options, (response) => {
+                console.log(`📊 Response status: ${response.statusCode} ${response.statusMessage}`);
+                console.log('📋 Response headers:', JSON.stringify(response.headers, null, 2));
+                
+                if (response.statusCode === 302 || response.statusCode === 301) {
+                    // Handle redirects
+                    console.log('🔄 Following redirect to:', response.headers.location);
+                    return this.downloadFile(response.headers.location, filePath, accessToken)
+                        .then(resolve)
+                        .catch(reject);
+                }
+                
                 if (response.statusCode !== 200) {
-                    reject(new Error(`Failed to download file: ${response.statusCode} ${response.statusMessage}`));
+                    console.error(`❌ Download failed with status ${response.statusCode}`);
+                    console.error('📋 Response headers:', response.headers);
+                    
+                    // Try to read error response body
+                    let errorBody = '';
+                    response.on('data', chunk => errorBody += chunk);
+                    response.on('end', () => {
+                        console.error('❌ Error response body:', errorBody);
+                        reject(new Error(`Failed to download file: ${response.statusCode} ${response.statusMessage}\nResponse: ${errorBody}`));
+                    });
                     return;
                 }
 
+                console.log('✅ Starting file write stream...');
                 const fileStream = require('fs').createWriteStream(filePath);
+                
+                let downloadedBytes = 0;
+                response.on('data', (chunk) => {
+                    downloadedBytes += chunk.length;
+                    if (downloadedBytes % 10240 === 0) { // Log every 10KB
+                        console.log(`⬇️ Downloaded ${downloadedBytes} bytes...`);
+                    }
+                });
                 
                 response.pipe(fileStream);
                 
                 fileStream.on('finish', () => {
                     fileStream.close();
+                    console.log(`✅ Download completed! Total bytes: ${downloadedBytes}`);
                     resolve();
                 });
                 
                 fileStream.on('error', (err) => {
+                    console.error('❌ File stream error:', err);
                     require('fs').unlink(filePath, () => {}); // Clean up on error
                     reject(err);
                 });
             });
 
             request.on('error', (err) => {
+                console.error('❌ Request error:', err);
                 reject(err);
+            });
+            
+            request.setTimeout(30000, () => {
+                console.error('❌ Request timeout after 30 seconds');
+                request.destroy();
+                reject(new Error('Download request timeout'));
             });
         });
     }
