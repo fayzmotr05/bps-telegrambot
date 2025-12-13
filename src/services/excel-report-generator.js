@@ -6,34 +6,48 @@ const http = require('http');
 
 class ExcelReportService {
     constructor() {
-        // Initialize Google Sheets API auth (same as phone-registry.js)
-        this.setupAuth();
+        this.auth = null;
     }
 
     setupAuth() {
-        if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
-            console.log('📊 Using Google credentials from environment variables for Excel export');
-            this.auth = new google.auth.JWT(
-                process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-                null,
-                process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-                ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly']
-            );
-        } else if (process.env.GOOGLE_SERVICE_ACCOUNT) {
-            console.log('📊 Using Google credentials from GOOGLE_SERVICE_ACCOUNT environment variable for Excel export');
-            const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-            this.auth = new google.auth.GoogleAuth({
-                credentials: credentials,
-                scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly']
-            });
-        } else {
-            console.log('❌ No Google credentials found for Excel export');
+        if (this.auth) return; // Already set up
+        
+        try {
+            if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
+                console.log('📊 Setting up Google credentials for Excel export');
+                this.auth = new google.auth.JWT(
+                    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+                    null,
+                    process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+                    ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly']
+                );
+            } else if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+                console.log('📊 Setting up Google credentials from GOOGLE_SERVICE_ACCOUNT');
+                const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+                this.auth = new google.auth.GoogleAuth({
+                    credentials: credentials,
+                    scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly']
+                });
+            } else {
+                console.log('⚠️ No Google credentials found for Excel export - will fallback to text report');
+                this.auth = null;
+            }
+        } catch (error) {
+            console.error('❌ Error setting up Google auth for Excel export:', error);
             this.auth = null;
         }
     }
 
     async generateReport(reportData, phoneNumber, fromDate, toDate, language = 'uz', clientName = null) {
         try {
+            // Setup auth only when needed
+            this.setupAuth();
+            
+            if (!this.auth) {
+                console.log('⚠️ Google Sheets export not available, falling back to text report');
+                return this.generateTextFallback(reportData, phoneNumber, fromDate, toDate, clientName);
+            }
+            
             console.log('📊 Downloading actual Google Sheets file with formatting...');
             
             const clientFileName = clientName ? `_${clientName.replace(/[^a-zA-Z0-9а-яё]/gi, '_')}` : '';
@@ -47,10 +61,6 @@ class ExcelReportService {
             const SHEET_ID = '1Qogaq381KUC0iLUXEpfeurgSgCdq-rd04cHlhKn3Ejs';
             const REPORT_SHEET_NAME = 'ТГ бот (не трогать)';
             
-            if (!this.auth) {
-                throw new Error('Google Sheets authentication not configured');
-            }
-
             // Get access token
             const accessToken = await this.getAccessToken();
             
@@ -68,9 +78,15 @@ class ExcelReportService {
             
             return filePath;
             
+        } catch (downloadError) {
+            console.error('❌ Error downloading Google Sheets file:', downloadError);
+            console.log('🔄 Falling back to text report...');
+            return this.generateTextFallback(reportData, phoneNumber, fromDate, toDate, clientName);
+        }
+        
         } catch (error) {
-            console.error('❌ Error downloading Google Sheets file:', error);
-            throw error;
+            console.error('❌ Error in Excel report generation:', error);
+            return this.generateTextFallback(reportData, phoneNumber, fromDate, toDate, clientName);
         }
     }
 
@@ -144,12 +160,51 @@ class ExcelReportService {
         }
     }
 
+    async generateTextFallback(reportData, phoneNumber, fromDate, toDate, clientName) {
+        console.log('📝 Generating text fallback report...');
+        
+        const fileName = `hisobot_${phoneNumber.replace(/[^0-9]/g, '')}_text_${Date.now()}.txt`;
+        const filePath = path.join(__dirname, '../temp', fileName);
+        
+        // Ensure temp directory exists
+        await fs.mkdir(path.dirname(filePath), { recursive: true });
+        
+        let report = '';
+        report += `═══════════════════════════════════\n`;
+        report += `📊 BPS Hisobot\n`;
+        if (clientName) {
+            report += `👤 ${clientName}\n`;
+        }
+        report += `📱 ${phoneNumber}\n`;
+        report += `📅 ${this.formatDate(fromDate)} - ${this.formatDate(toDate)}\n`;
+        report += `═══════════════════════════════════\n\n`;
+        
+        if (reportData && reportData.rawData && reportData.rawData.length > 0) {
+            reportData.rawData.forEach((row, index) => {
+                if (row && row.length > 0) {
+                    report += `${index + 1}. ${row.join(' | ')}\n`;
+                }
+            });
+        } else {
+            report += `❌ Ma'lumot topilmadi\n`;
+        }
+        
+        report += `\n═══════════════════════════════════\n`;
+        report += `📧 euroasiaprint@gmail.com\n`;
+        report += `📞 +998 90 123 45 67\n`;
+        
+        await fs.writeFile(filePath, report, 'utf8');
+        console.log(`✅ Text fallback report generated: ${filePath}`);
+        
+        return filePath;
+    }
+
     async cleanup(filePath) {
         try {
             await fs.unlink(filePath);
-            console.log(`🧹 Cleaned up temporary Excel file: ${filePath}`);
+            console.log(`🧹 Cleaned up temporary file: ${filePath}`);
         } catch (error) {
-            console.error('❌ Error cleaning up Excel file:', error);
+            console.error('❌ Error cleaning up file:', error);
         }
     }
 }
