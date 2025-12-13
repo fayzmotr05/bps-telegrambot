@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 const handlebars = require('handlebars');
 const path = require('path');
 const fs = require('fs').promises;
@@ -26,7 +26,7 @@ class PDFService {
             const html = compiledTemplate(templateData);
             
             const browser = await puppeteer.launch({
-                headless: true,
+                headless: 'new',
                 args: [
                     '--no-sandbox', 
                     '--disable-setuid-sandbox',
@@ -35,9 +35,10 @@ class PDFService {
                     '--no-first-run',
                     '--no-zygote',
                     '--single-process',
-                    '--disable-gpu'
-                ],
-                executablePath: process.env.CHROME_BIN || process.env.GOOGLE_CHROME_SHIM || undefined
+                    '--disable-gpu',
+                    '--disable-web-security',
+                    '--disable-extensions'
+                ]
             });
             
             const page = await browser.newPage();
