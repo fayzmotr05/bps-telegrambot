@@ -35,10 +35,10 @@ class PhoneRegistryService {
             console.log('📚 Starting to read phone numbers from directory sheet...');
             console.log(`📚 Sheet ID: ${SHEET_ID}`);
             console.log(`📚 Sheet Name: "${DIRECTORY_SHEET_NAME}"`);
-            console.log(`📚 Range: "${DIRECTORY_SHEET_NAME}!Q2:R"`);
+            console.log(`📚 Range: "${DIRECTORY_SHEET_NAME}!Q2:V"`);
             
-            // Read columns Q (names) and R (phones) from row 2 onwards
-            const range = `${DIRECTORY_SHEET_NAME}!Q2:R`;
+            // Read columns Q (names) and R-V (check for phones) from row 2 onwards
+            const range = `${DIRECTORY_SHEET_NAME}!Q2:V`;
             
             // First, test basic connectivity by trying to read A1
             console.log('🧪 Testing basic Google Sheets connectivity...');
@@ -111,7 +111,28 @@ class PhoneRegistryService {
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i] || [];
                 const clientName = row[0] ? row[0].toString().trim() : ''; // Column Q
-                const phoneValue = row[1] ? row[1].toString().trim() : ''; // Column R
+                
+                // Check multiple columns for phone numbers: R(1), S(2), T(3), U(4), V(5)
+                let phoneValue = '';
+                let phoneColumn = '';
+                
+                for (let colIndex = 1; colIndex <= 5; colIndex++) {
+                    const cellValue = row[colIndex] ? row[colIndex].toString().trim() : '';
+                    if (cellValue && this.isValidPhoneFormat(cellValue)) {
+                        phoneValue = cellValue;
+                        phoneColumn = String.fromCharCode(81 + colIndex); // Q=81, R=82, S=83, T=84, U=85, V=86
+                        console.log(`📞 Found phone in column ${phoneColumn} (index ${colIndex}): ${phoneValue}`);
+                        break;
+                    }
+                }
+                
+                if (!phoneValue) {
+                    // Check if any column has data (for debugging)
+                    const hasAnyData = row.slice(1, 6).some(cell => cell && cell.toString().trim());
+                    if (hasAnyData) {
+                        console.log(`📋 Row ${i + 2}: "${clientName}" has data but no valid phone:`, row.slice(1, 6));
+                    }
+                }
                 
                 if (!phoneValue) {
                     emptyCount++;
@@ -164,6 +185,26 @@ class PhoneRegistryService {
             
             return [];
         }
+    }
+
+    // Check if a string looks like a phone number before processing
+    isValidPhoneFormat(phoneStr) {
+        if (!phoneStr) return false;
+        
+        const digits = phoneStr.toString().replace(/\D/g, '');
+        
+        // Must have at least 9 digits and max 15 (international standard)
+        if (digits.length < 9 || digits.length > 15) {
+            console.log(`📞 Invalid phone format: "${phoneStr}" (${digits.length} digits)`);
+            return false;
+        }
+        
+        // Should not be sequential numbers like "1", "2", "3"... "42"
+        if (digits.length <= 3 && /^[0-9]{1,3}$/.test(digits)) {
+            return false; // These are likely IDs, not phone numbers
+        }
+        
+        return true;
     }
 
     // Normalize phone number format - very aggressive normalization
