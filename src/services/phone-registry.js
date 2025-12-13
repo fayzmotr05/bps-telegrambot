@@ -341,8 +341,9 @@ class PhoneRegistryService {
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD format
 
-            // Get today's report data
-            const reportData = await this.getTodaysReportData(normalizedPhone, todayStr);
+            // Skip today's report data for now to test registration
+            // const reportData = await this.getTodaysReportData(normalizedPhone, todayStr);
+            const reportData = null;
 
             return {
                 registered: true,

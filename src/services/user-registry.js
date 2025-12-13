@@ -33,6 +33,7 @@ class UserRegistryService {
             const userData = {
                 telegram_id: telegramId,
                 phone_number: phoneCheck.normalizedPhone,
+                normalized_phone: phoneCheck.normalizedPhone,
                 original_phone: phoneNumber,
                 first_name: firstName,
                 last_name: lastName,
