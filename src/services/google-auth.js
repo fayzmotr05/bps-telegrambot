@@ -179,22 +179,12 @@ class GoogleAuthService {
                 await this.initialize();
             }
 
-            console.log('🔑 Getting access token...');
-            console.log('📋 Auth object type:', this.auth.constructor.name);
-
             if (this.auth.getAccessToken) {
-                // GoogleAuth method
-                console.log('📊 Using GoogleAuth.getAccessToken() method');
                 const tokenResponse = await this.auth.getAccessToken();
-                console.log('✅ Token response received, length:', tokenResponse.token?.length || 0);
                 return tokenResponse.token;
             } else if (this.auth.request) {
-                // JWT method
-                console.log('📊 Using JWT.getRequestHeaders() method');
                 const headers = await this.auth.getRequestHeaders();
-                const token = headers.authorization?.replace('Bearer ', '');
-                console.log('✅ JWT token extracted, length:', token?.length || 0);
-                return token;
+                return headers.authorization?.replace('Bearer ', '');
             }
             
             throw new Error('Unable to get access token from auth object - no suitable method found');

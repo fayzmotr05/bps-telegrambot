@@ -23,14 +23,7 @@ class ExcelReportService {
     }
 
     async generateReport(reportData, phoneNumber, fromDate, toDate, language = 'uz', clientName = null) {
-        // Setup auth
-        await this.setupAuth();
-        
-        if (!this.auth) {
-            throw new Error('Google Sheets authentication failed - cannot download original file');
-        }
-        
-        console.log('📊 Downloading original Google Sheets file with all formatting...');
+        console.log('📊 Starting Google Sheets download process...');
         
         const clientFileName = clientName ? `_${clientName.replace(/[^a-zA-Z0-9а-яё]/gi, '_')}` : '';
         const fileName = `hisobot_${phoneNumber.replace(/[^0-9]/g, '')}${clientFileName}_${Date.now()}.xlsx`;
@@ -39,32 +32,93 @@ class ExcelReportService {
         // Ensure temp directory exists
         await fs.mkdir(path.dirname(filePath), { recursive: true });
 
-        // Google Sheets ID from phone-registry.js
         const SHEET_ID = '1Qogaq381KUC0iLUXEpfeurgSgCdq-rd04cHlhKn3Ejs';
         
-        // Get access token
-        const accessToken = await this.getAccessToken();
+        // Try multiple approaches professionally
+        const approaches = [
+            () => this.downloadWithAuth(SHEET_ID, filePath),
+            () => this.downloadWithPublicAccess(SHEET_ID, filePath),
+            () => this.downloadWithDirectAPI(SHEET_ID, filePath)
+        ];
         
-        // Download the actual Excel file from Google Sheets with formatting
-        const exportUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx&gid=0`;
+        let lastError = null;
         
-        console.log('📥 Downloading original Google Sheets file...');
-        console.log('🔗 Export URL:', exportUrl);
+        for (let i = 0; i < approaches.length; i++) {
+            try {
+                console.log(`📥 Attempt ${i + 1}: Trying download method ${i + 1}...`);
+                await approaches[i]();
+                
+                console.log(`✅ Successfully downloaded using method ${i + 1}`);
+                console.log(`📁 File: ${filePath}`);
+                console.log(`👤 Client: ${clientName || 'Unknown'}`);
+                console.log(`📱 Phone: ${phoneNumber}`);
+                
+                return filePath;
+                
+            } catch (error) {
+                console.error(`❌ Method ${i + 1} failed:`, error.message);
+                lastError = error;
+                
+                if (i < approaches.length - 1) {
+                    console.log(`🔄 Trying next method...`);
+                }
+            }
+        }
         
+        // All methods failed
+        console.error('❌ All download methods failed');
+        throw new Error(`Failed to download Google Sheets file. Last error: ${lastError?.message}`);
+    }
+
+    // Method 1: Download with authentication (original approach)
+    async downloadWithAuth(sheetId, filePath) {
+        console.log('🔐 Method 1: Downloading with authentication');
+        
+        await this.setupAuth();
+        if (!this.auth) {
+            throw new Error('Authentication setup failed');
+        }
+        
+        const accessToken = await GoogleAuthService.getAccessToken();
+        if (!accessToken) {
+            throw new Error('Failed to get access token');
+        }
+        
+        const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx&gid=0`;
         await this.downloadFile(exportUrl, filePath, accessToken);
+    }
+    
+    // Method 2: Download with public access (if sheet is public)
+    async downloadWithPublicAccess(sheetId, filePath) {
+        console.log('🌐 Method 2: Attempting public access download');
         
-        console.log(`✅ Original Google Sheets file downloaded: ${filePath}`);
-        console.log(`👤 Client: ${clientName || 'Unknown'}`);
-        console.log(`📱 Phone: ${phoneNumber}`);
-        console.log(`📅 Date range: ${this.formatDate(fromDate)} - ${this.formatDate(toDate)}`);
+        const publicExportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx&gid=0`;
+        await this.downloadFileWithoutAuth(publicExportUrl, filePath);
+    }
+    
+    // Method 3: Download via Google Drive API
+    async downloadWithDirectAPI(sheetId, filePath) {
+        console.log('💾 Method 3: Using Direct Drive API');
         
-        return filePath;
+        await this.setupAuth();
+        if (!this.auth) {
+            throw new Error('Authentication required for Drive API');
+        }
+        
+        const driveUrl = `https://www.googleapis.com/drive/v3/files/${sheetId}/export?mimeType=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`;
+        const accessToken = await GoogleAuthService.getAccessToken();
+        
+        if (!accessToken) {
+            throw new Error('Drive API requires access token');
+        }
+        
+        await this.downloadFile(driveUrl, filePath, accessToken);
     }
 
     async getAccessToken() {
-        console.log('🔑 Getting access token for Google Sheets download...');
+        console.log('🔑 Getting access token...');
         const token = await GoogleAuthService.getAccessToken();
-        console.log('✅ Access token retrieved successfully');
+        console.log('✅ Token retrieved, length:', token?.length || 0);
         return token;
     }
 
@@ -132,6 +186,53 @@ class ExcelReportService {
                 console.error('❌ Request timeout after 30 seconds');
                 request.destroy();
                 reject(new Error('Download request timeout'));
+            });
+        });
+    }
+
+    // Download without authentication (for public sheets)
+    async downloadFileWithoutAuth(url, filePath) {
+        return new Promise((resolve, reject) => {
+            console.log('🌐 Downloading without authentication...');
+            
+            const protocol = url.startsWith('https:') ? https : http;
+            
+            const request = protocol.get(url, (response) => {
+                console.log(`📊 Response: ${response.statusCode}`);
+                
+                if (response.statusCode === 302 || response.statusCode === 301) {
+                    console.log('🔄 Following redirect');
+                    return this.downloadFileWithoutAuth(response.headers.location, filePath)
+                        .then(resolve)
+                        .catch(reject);
+                }
+                
+                if (response.statusCode !== 200) {
+                    reject(new Error(`Public access failed: ${response.statusCode}`));
+                    return;
+                }
+
+                console.log('✅ Public download starting...');
+                const fileStream = require('fs').createWriteStream(filePath);
+                
+                response.pipe(fileStream);
+                
+                fileStream.on('finish', () => {
+                    fileStream.close();
+                    console.log('✅ Public download completed');
+                    resolve();
+                });
+                
+                fileStream.on('error', (err) => {
+                    require('fs').unlink(filePath, () => {});
+                    reject(err);
+                });
+            });
+
+            request.on('error', reject);
+            request.setTimeout(30000, () => {
+                request.destroy();
+                reject(new Error('Public download timeout'));
             });
         });
     }
