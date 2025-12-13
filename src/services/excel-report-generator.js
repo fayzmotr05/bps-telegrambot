@@ -1,79 +1,132 @@
-const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs').promises;
+const { google } = require('googleapis');
+const https = require('https');
+const http = require('http');
 
 class ExcelReportService {
+    constructor() {
+        // Initialize Google Sheets API auth (same as phone-registry.js)
+        this.setupAuth();
+    }
+
+    setupAuth() {
+        if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
+            console.log('📊 Using Google credentials from environment variables for Excel export');
+            this.auth = new google.auth.JWT(
+                process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+                null,
+                process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+                ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly']
+            );
+        } else if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+            console.log('📊 Using Google credentials from GOOGLE_SERVICE_ACCOUNT environment variable for Excel export');
+            const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+            this.auth = new google.auth.GoogleAuth({
+                credentials: credentials,
+                scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.readonly']
+            });
+        } else {
+            console.log('❌ No Google credentials found for Excel export');
+            this.auth = null;
+        }
+    }
 
     async generateReport(reportData, phoneNumber, fromDate, toDate, language = 'uz', clientName = null) {
         try {
-            console.log('📊 Generating Excel report from Google Sheets data...');
+            console.log('📊 Downloading actual Google Sheets file with formatting...');
             
-            const clientFileName = clientName ? `_${clientName.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+            const clientFileName = clientName ? `_${clientName.replace(/[^a-zA-Z0-9а-яё]/gi, '_')}` : '';
             const fileName = `hisobot_${phoneNumber.replace(/[^0-9]/g, '')}${clientFileName}_${Date.now()}.xlsx`;
             const filePath = path.join(__dirname, '../temp', fileName);
             
             // Ensure temp directory exists
             await fs.mkdir(path.dirname(filePath), { recursive: true });
+
+            // Google Sheets ID from phone-registry.js
+            const SHEET_ID = '1Qogaq381KUC0iLUXEpfeurgSgCdq-rd04cHlhKn3Ejs';
+            const REPORT_SHEET_NAME = 'ТГ бот (не трогать)';
             
-            // Create workbook and worksheet
-            const workbook = XLSX.utils.book_new();
-            
-            // Use the raw data from Google Sheets directly
-            let worksheetData = [];
-            
-            if (reportData && reportData.rawData && reportData.rawData.length > 0) {
-                // Add header with client info if available
-                const headerText = clientName ? 
-                    `BPS Hisobot - ${clientName} (${phoneNumber})` : 
-                    `BPS Hisobot - ${phoneNumber}`;
-                    
-                worksheetData.push([headerText]);
-                worksheetData.push([`${this.formatDate(fromDate)} - ${this.formatDate(toDate)}`]);
-                worksheetData.push(['']); // Empty row for spacing
-                
-                // Add the raw data exactly as it comes from Google Sheets (entire sheet with formatting intact)
-                reportData.rawData.forEach(row => {
-                    // Keep the row exactly as-is from Google Sheets, don't filter anything
-                    worksheetData.push(row || []);
-                });
-            } else {
-                // No data available
-                const headerText = clientName ? 
-                    `BPS Hisobot - ${clientName} (${phoneNumber})` : 
-                    `BPS Hisobot - ${phoneNumber}`;
-                    
-                worksheetData.push([headerText]);
-                worksheetData.push([`${this.formatDate(fromDate)} - ${this.formatDate(toDate)}`]);
-                worksheetData.push(['']);
-                worksheetData.push(['Ma\'lumot topilmadi']);
+            if (!this.auth) {
+                throw new Error('Google Sheets authentication not configured');
             }
+
+            // Get access token
+            const accessToken = await this.getAccessToken();
             
-            // Create worksheet from the data
-            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            // Download the actual Excel file from Google Sheets with formatting
+            // Use the export URL to get the sheet with all formatting intact
+            const exportUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx&gid=0`;
             
-            // Set reasonable column widths to match Google Sheets
-            const maxCols = Math.max(...worksheetData.map(row => row.length));
-            const columnWidths = [];
-            for (let i = 0; i < maxCols; i++) {
-                columnWidths.push({ wch: 12 }); // Consistent width for all columns
-            }
-            worksheet['!cols'] = columnWidths;
+            console.log('📥 Downloading formatted Excel file from Google Sheets...');
+            await this.downloadFile(exportUrl, filePath, accessToken);
             
-            // Add worksheet to workbook with client name if available
-            const sheetName = clientName ? `${clientName} - Hisobot` : 'Hisobot';
-            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName.substring(0, 31)); // Excel sheet name limit
-            
-            // Write file
-            XLSX.writeFile(workbook, filePath);
-            
-            console.log(`✅ Excel report generated: ${filePath}`);
+            console.log(`✅ Google Sheets Excel file downloaded: ${filePath}`);
             console.log(`👤 Client: ${clientName || 'Unknown'}`);
+            console.log(`📱 Phone: ${phoneNumber}`);
+            console.log(`📅 Date range: ${this.formatDate(fromDate)} - ${this.formatDate(toDate)}`);
+            
             return filePath;
             
         } catch (error) {
-            console.error('❌ Error generating Excel report:', error);
+            console.error('❌ Error downloading Google Sheets file:', error);
             throw error;
         }
+    }
+
+    async getAccessToken() {
+        try {
+            if (this.auth.getAccessToken) {
+                const tokenResponse = await this.auth.getAccessToken();
+                return tokenResponse.token;
+            } else if (this.auth.request) {
+                // JWT auth
+                const headers = await this.auth.getRequestHeaders();
+                return headers.authorization.replace('Bearer ', '');
+            }
+            throw new Error('Unable to get access token');
+        } catch (error) {
+            console.error('❌ Error getting access token:', error);
+            throw error;
+        }
+    }
+
+    async downloadFile(url, filePath, accessToken) {
+        return new Promise((resolve, reject) => {
+            const protocol = url.startsWith('https:') ? https : http;
+            
+            const options = {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'User-Agent': 'BPS-TelegramBot/1.0'
+                }
+            };
+
+            const request = protocol.get(url, options, (response) => {
+                if (response.statusCode !== 200) {
+                    reject(new Error(`Failed to download file: ${response.statusCode} ${response.statusMessage}`));
+                    return;
+                }
+
+                const fileStream = require('fs').createWriteStream(filePath);
+                
+                response.pipe(fileStream);
+                
+                fileStream.on('finish', () => {
+                    fileStream.close();
+                    resolve();
+                });
+                
+                fileStream.on('error', (err) => {
+                    require('fs').unlink(filePath, () => {}); // Clean up on error
+                    reject(err);
+                });
+            });
+
+            request.on('error', (err) => {
+                reject(err);
+            });
+        });
     }
 
 
