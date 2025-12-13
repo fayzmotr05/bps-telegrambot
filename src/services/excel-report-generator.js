@@ -85,7 +85,16 @@ class ExcelReportService {
             console.log('✅ Access token retrieved successfully');
             return token;
         } catch (error) {
-            console.error('❌ Error getting access token:', error);
+            console.error('❌ Error getting access token:', error.message);
+            
+            // Check if it's an OpenSSL compatibility issue
+            if (error.message.includes('DECODER routines') || error.message.includes('unsupported')) {
+                console.log('🔍 Detected OpenSSL/Node.js compatibility issue');
+                console.log('💡 This typically happens with Node.js 22 + OpenSSL 3.5');
+                console.log('🚀 This should work properly on Railway with their Node.js/OpenSSL versions');
+                console.log('📝 Falling back to beautiful Excel generation for now');
+            }
+            
             throw error;
         }
     }
