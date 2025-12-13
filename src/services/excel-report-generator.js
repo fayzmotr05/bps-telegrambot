@@ -91,10 +91,21 @@ class ExcelReportService {
             throw new Error('Failed to get access token');
         }
         
-        // Try multiple export URLs
+        // Try multiple export approaches - use same auth that works for reading data
+        const sheetsClient = await GoogleAuthService.getSheetsClient();
+        
+        // Method 1: Try to use the working Sheets API to create our own Excel file
+        try {
+            console.log('📊 Attempting to create Excel from Sheets API data...');
+            return await this.createExcelFromSheetsData(sheetsClient, sheetId, filePath);
+        } catch (apiError) {
+            console.log('⚠️ Sheets API method failed, trying direct export...');
+        }
+        
+        // Method 2: Try export URLs with same auth that works for data access
         const exportUrls = [
-            `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx&gid=0`,
             `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx`,
+            `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx&gid=0`,
             `https://www.googleapis.com/drive/v3/files/${sheetId}/export?mimeType=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
         ];
         
@@ -275,31 +286,77 @@ class ExcelReportService {
         }
     }
 
+    async createExcelFromSheetsData(sheetsClient, sheetId, filePath) {
+        try {
+            console.log('📊 Reading sheet data directly using working API...');
+            
+            // Get sheet metadata to find all worksheets
+            const sheetMetadata = await sheetsClient.spreadsheets.get({
+                spreadsheetId: sheetId
+            });
+            
+            console.log('📄 Sheet name:', sheetMetadata.data.properties.title);
+            console.log('📄 Found', sheetMetadata.data.sheets.length, 'worksheets');
+            
+            // Get the first worksheet (or main data sheet)
+            const mainSheet = sheetMetadata.data.sheets[0];
+            const sheetName = mainSheet.properties.title;
+            
+            console.log('📊 Reading data from worksheet:', sheetName);
+            
+            // Read all data from the sheet
+            const response = await sheetsClient.spreadsheets.values.get({
+                spreadsheetId: sheetId,
+                range: sheetName // This gets all data from the sheet
+            });
+            
+            const rows = response.data.values;
+            console.log('📊 Retrieved', rows?.length || 0, 'rows of data');
+            
+            if (!rows || rows.length === 0) {
+                throw new Error('No data found in sheet');
+            }
+            
+            // Create Excel file using the XLSX library
+            const XLSX = require('xlsx');
+            
+            // Convert the data to a worksheet
+            const worksheet = XLSX.utils.aoa_to_sheet(rows);
+            
+            // Create a new workbook and add the worksheet
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+            
+            // Write the Excel file
+            XLSX.writeFile(workbook, filePath);
+            
+            console.log('✅ Successfully created Excel file from Sheets API data');
+            return;
+            
+        } catch (error) {
+            console.error('❌ Failed to create Excel from Sheets API:', error.message);
+            throw error;
+        }
+    }
+
     async ensureSheetAccess(sheetId) {
         try {
             await this.setupAuth();
             if (!this.auth) return;
 
-            const driveClient = await GoogleAuthService.getDriveClient();
+            const sheetsClient = await GoogleAuthService.getSheetsClient();
             
-            // Try to get file info to check if we have access
-            const fileInfo = await driveClient.files.get({
-                fileId: sheetId,
-                fields: 'id,name,permissions'
+            // Try to get sheet info to check if we have access
+            const sheetInfo = await sheetsClient.spreadsheets.get({
+                spreadsheetId: sheetId,
+                fields: 'properties'
             });
             
-            console.log('📄 Sheet access verified:', fileInfo.data.name);
+            console.log('📄 Sheet access verified:', sheetInfo.data.properties.title);
             return true;
             
         } catch (error) {
             console.log('⚠️ Sheet access check failed:', error.message);
-            
-            // Try to add service account as viewer
-            if (error.code === 403 || error.message?.includes('permission')) {
-                console.log('🔑 Attempting to grant access to service account...');
-                // This would require owner permissions to work
-            }
-            
             throw error;
         }
     }
