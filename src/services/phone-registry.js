@@ -397,7 +397,7 @@ class PhoneRegistryService {
             const rows = reportResponse.data.values || [];
             const reportData = {
                 phoneNumber: phoneNumber,
-                date: dateStr,
+                date: `${fromDateStr} - ${endDateStr}`,
                 calculatedData: {},
                 rawData: rows
             };
