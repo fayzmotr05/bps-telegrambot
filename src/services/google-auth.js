@@ -73,15 +73,10 @@ class GoogleAuthService {
             }
 
             // Test authentication
-            const authSuccess = await this.testAuthentication();
+            await this.testAuthentication();
             
             this.isInitialized = true;
-            
-            if (authSuccess) {
-                console.log('✅ Google Authentication initialized and tested successfully');
-            } else {
-                console.log('⚠️ Google Authentication initialized but test failed (may work on Railway)');
-            }
+            console.log('✅ Google Authentication initialized and tested successfully');
             
             return this.auth;
             
@@ -97,76 +92,39 @@ class GoogleAuthService {
      * Test authentication by making a simple API call
      */
     async testAuthentication() {
-        try {
-            if (!this.auth) {
-                throw new Error('Auth not initialized');
-            }
-
-            // Try to get access token with multiple approaches
-            try {
-                const accessToken = await this.getAccessToken();
-                
-                if (!accessToken) {
-                    throw new Error('Failed to get access token');
-                }
-                
-                console.log('🔑 Authentication test successful');
-                return true;
-                
-            } catch (authError) {
-                console.error('🔍 Primary auth method failed:', authError.message);
-                
-                // Check if it's an OpenSSL compatibility issue
-                if (authError.message.includes('DECODER routines') || authError.message.includes('unsupported')) {
-                    console.log('⚠️ Detected OpenSSL compatibility issue - this may work on Railway');
-                    console.log('💡 The authentication will be retried on Railway with different Node.js/OpenSSL versions');
-                    
-                    // Don't throw error - let it continue and use fallback on actual usage
-                    return false;
-                } else {
-                    throw authError;
-                }
-            }
-            
-        } catch (error) {
-            console.error('❌ Authentication test failed:', error.message);
-            throw error;
+        if (!this.auth) {
+            throw new Error('Auth not initialized');
         }
+
+        const accessToken = await this.getAccessToken();
+        
+        if (!accessToken) {
+            throw new Error('Failed to get access token');
+        }
+        
+        console.log('🔑 Authentication test successful');
+        return true;
     }
 
     /**
      * Get access token for API calls
      */
     async getAccessToken() {
-        try {
-            if (!this.auth) {
-                await this.initialize();
-            }
-
-            if (this.auth.getAccessToken) {
-                // GoogleAuth method
-                const tokenResponse = await this.auth.getAccessToken();
-                return tokenResponse.token;
-            } else if (this.auth.request) {
-                // JWT method
-                const headers = await this.auth.getRequestHeaders();
-                return headers.authorization.replace('Bearer ', '');
-            }
-            
-            throw new Error('Unable to get access token from auth object');
-            
-        } catch (error) {
-            console.error('🔍 Primary auth method failed:', error.message);
-            
-            // Check if it's an OpenSSL compatibility issue
-            if (error.message.includes('DECODER routines') || error.message.includes('unsupported')) {
-                console.log('⚠️ Detected OpenSSL compatibility issue during token generation');
-                console.log('🚀 This should work properly on Railway with their environment');
-            }
-            
-            console.error('❌ Failed to get access token:', error.message);
-            throw error;
+        if (!this.auth) {
+            await this.initialize();
         }
+
+        if (this.auth.getAccessToken) {
+            // GoogleAuth method
+            const tokenResponse = await this.auth.getAccessToken();
+            return tokenResponse.token;
+        } else if (this.auth.request) {
+            // JWT method
+            const headers = await this.auth.getRequestHeaders();
+            return headers.authorization.replace('Bearer ', '');
+        }
+        
+        throw new Error('Unable to get access token from auth object');
     }
 
     /**
