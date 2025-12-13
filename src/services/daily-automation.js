@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const UserRegistryService = require('./user-registry');
 const PhoneRegistryService = require('./phone-registry');
-const TextReportService = require('./text-report-generator');
+const ExcelReportService = require('./excel-report-generator');
 const { getMessage } = require('../config/messages');
 
 class DailyAutomationService {
@@ -103,9 +103,9 @@ class DailyAutomationService {
                 return;
             }
 
-            // Generate text report
+            // Generate Excel report
             const language = user.language_code || 'uz';
-            const textReport = await TextReportService.generateReport(
+            const excelPath = await ExcelReportService.generateReport(
                 reportData,
                 user.phone_number,
                 dateStr,
@@ -113,15 +113,18 @@ class DailyAutomationService {
                 language
             );
 
-            // Send text report to user
+            // Send Excel report to user
             const caption = getMessage('dailyReports.todayReport', language) || 
                 `📊 Bugungi hisobot - ${this.formatDate(dateStr)}`;
 
-            await this.bot.telegram.sendMessage(
+            await this.bot.telegram.sendDocument(
                 user.telegram_id,
-                `${caption}\n\n\`\`\`\n${textReport}\n\`\`\``,
-                { parse_mode: 'Markdown' }
+                { source: excelPath },
+                { caption: caption }
             );
+
+            // Clean up Excel file
+            await ExcelReportService.cleanup(excelPath);
 
             console.log(`✅ Daily report sent successfully to ${user.phone_number}`);
 

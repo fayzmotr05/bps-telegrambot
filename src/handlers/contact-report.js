@@ -1,6 +1,6 @@
 const { Scenes, Markup } = require('telegraf');
 const SheetsService = require('../services/google-sheets');
-const TextReportService = require('../services/text-report-generator');
+const ExcelReportService = require('../services/excel-report-generator');
 const UserRegistryService = require('../services/user-registry');
 const PhoneRegistryService = require('../services/phone-registry');
 const { getMessage } = require('../config/messages');
@@ -196,12 +196,14 @@ async function generateReport(ctx, phoneNumber, fromDate, toDate) {
             return;
         }
         
-        const textReport = await TextReportService.generateReport(reportData, phoneNumber, fromDate, toDate, lang);
+        const excelPath = await ExcelReportService.generateReport(reportData, phoneNumber, fromDate, toDate, lang);
         
-        await ctx.reply(
-            `${getMessage('contactReport.reportGenerated', lang)}\n\n\`\`\`\n${textReport}\n\`\`\``,
-            { parse_mode: 'Markdown' }
+        await ctx.replyWithDocument(
+            { source: excelPath },
+            { caption: getMessage('contactReport.reportGenerated', lang) }
         );
+        
+        await ExcelReportService.cleanup(excelPath);
         
         reportQueue.delete(phoneNumber);
         await ctx.reply(getMessage('contactReport.completed', lang));
