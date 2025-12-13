@@ -35,10 +35,11 @@ class PhoneRegistryService {
             console.log('📚 Starting to read phone numbers from directory sheet...');
             console.log(`📚 Sheet ID: ${SHEET_ID}`);
             console.log(`📚 Sheet Name: "${DIRECTORY_SHEET_NAME}"`);
-            console.log(`📚 Range: "${DIRECTORY_SHEET_NAME}!Q2:V"`);
+            console.log(`📚 Range: "${DIRECTORY_SHEET_NAME}!Q2:R200"`);
             
-            // Read columns Q (names) and R-V (check for phones) from row 2 onwards
-            const range = `${DIRECTORY_SHEET_NAME}!Q2:V`;
+            // Read columns Q (names) and R-V (check for phones) from row 2 onwards  
+            // Extended range to capture all phone numbers that might be scattered
+            const range = `${DIRECTORY_SHEET_NAME}!Q2:R200`;
             
             // First, test basic connectivity by trying to read A1
             console.log('🧪 Testing basic Google Sheets connectivity...');
@@ -102,48 +103,25 @@ class PhoneRegistryService {
                 console.log('  1. Columns Q and R are empty from row 2 onwards');
                 console.log('  2. Data starts from a different row');
                 console.log('  3. Phone numbers are in a different column');
-                console.log('  4. The range Q2:R doesn\'t contain data');
+                console.log('  4. The range Q2:R200 doesn\'t contain data');
                 return [];
             }
             const phoneNumbers = [];
-            let emptyCount = 0;
 
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i] || [];
                 const clientName = row[0] ? row[0].toString().trim() : ''; // Column Q
+                const phoneValue = row[1] ? row[1].toString().trim() : ''; // Column R only
                 
-                // Check multiple columns for phone numbers: R(1), S(2), T(3), U(4), V(5)
-                let phoneValue = '';
-                let phoneColumn = '';
-                
-                for (let colIndex = 1; colIndex <= 5; colIndex++) {
-                    const cellValue = row[colIndex] ? row[colIndex].toString().trim() : '';
-                    if (cellValue && this.isValidPhoneFormat(cellValue)) {
-                        phoneValue = cellValue;
-                        phoneColumn = String.fromCharCode(81 + colIndex); // Q=81, R=82, S=83, T=84, U=85, V=86
-                        console.log(`📞 Found phone in column ${phoneColumn} (index ${colIndex}): ${phoneValue}`);
-                        break;
-                    }
-                }
+                console.log(`📋 Row ${i + 2}: Q="${clientName}" R="${phoneValue}"`);
                 
                 if (!phoneValue) {
-                    // Check if any column has data (for debugging)
-                    const hasAnyData = row.slice(1, 6).some(cell => cell && cell.toString().trim());
-                    if (hasAnyData) {
-                        console.log(`📋 Row ${i + 2}: "${clientName}" has data but no valid phone:`, row.slice(1, 6));
-                    }
+                    // Skip empty phone cells but don't stop scanning
+                    continue;
                 }
                 
-                if (!phoneValue) {
-                    emptyCount++;
-                    // Stop if we find 4 consecutive empty phone cells
-                    if (emptyCount >= 4) {
-                        console.log(`📚 Stopped reading at row ${i + 2} after 4 empty phone cells`);
-                        break;
-                    }
-                } else {
-                    emptyCount = 0; // Reset counter if we find a phone value
-                    // Clean and normalize phone number
+                // Validate and normalize phone number
+                if (this.isValidPhoneFormat(phoneValue)) {
                     const cleanPhone = this.normalizePhoneNumber(phoneValue);
                     if (cleanPhone) {
                         phoneNumbers.push({
@@ -154,6 +132,8 @@ class PhoneRegistryService {
                         });
                         console.log(`📚 Row ${i + 2}: "${clientName}" -> ${phoneValue} -> ${cleanPhone}`);
                     }
+                } else {
+                    console.log(`📞 Row ${i + 2}: "${clientName}" has invalid phone format: "${phoneValue}"`);
                 }
             }
 
