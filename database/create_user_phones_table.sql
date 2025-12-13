@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS user_phones (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT unique_telegram_phone UNIQUE(telegram_id, phone_number),
-    CONSTRAINT phone_number_format CHECK (normalized_phone ~ '^\+998[0-9]{9}$')
+    CONSTRAINT phone_number_format CHECK (normalized_phone ~ '^998[0-9]{9}$')
 );
 
 -- Create index for faster lookups

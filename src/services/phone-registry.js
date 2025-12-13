@@ -30,7 +30,7 @@ class PhoneRegistryService {
                 process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
                 null,
                 process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-                ['https://www.googleapis.com/auth/spreadsheets.readonly']
+                ['https://www.googleapis.com/auth/spreadsheets']
             );
         } else if (process.env.GOOGLE_SERVICE_ACCOUNT) {
             console.log('Using Google credentials from GOOGLE_SERVICE_ACCOUNT environment variable');
@@ -341,9 +341,8 @@ class PhoneRegistryService {
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD format
 
-            // Skip today's report data for now to test registration
-            // const reportData = await this.getTodaysReportData(normalizedPhone, todayStr);
-            const reportData = null;
+            // Get today's report data
+            const reportData = await this.getTodaysReportData(normalizedPhone, todayStr);
 
             return {
                 registered: true,
