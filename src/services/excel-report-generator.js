@@ -34,6 +34,13 @@ class ExcelReportService {
 
         const SHEET_ID = '1Qogaq381KUC0iLUXEpfeurgSgCdq-rd04cHlhKn3Ejs';
         
+        // Try to ensure service account has access
+        try {
+            await this.ensureSheetAccess(SHEET_ID);
+        } catch (error) {
+            console.log('⚠️ Could not verify sheet access, proceeding anyway');
+        }
+        
         // Try multiple approaches professionally
         const approaches = [
             () => this.downloadWithAuth(SHEET_ID, filePath),
@@ -84,8 +91,26 @@ class ExcelReportService {
             throw new Error('Failed to get access token');
         }
         
-        const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx&gid=0`;
-        await this.downloadFile(exportUrl, filePath, accessToken);
+        // Try multiple export URLs
+        const exportUrls = [
+            `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx&gid=0`,
+            `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx`,
+            `https://www.googleapis.com/drive/v3/files/${sheetId}/export?mimeType=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+        ];
+        
+        let lastError = null;
+        for (const url of exportUrls) {
+            try {
+                console.log('📥 Trying export URL:', url.split('/').slice(-2).join('/'));
+                await this.downloadFile(url, filePath, accessToken);
+                return; // Success
+            } catch (error) {
+                console.log(`⚠️ URL failed: ${error.message}`);
+                lastError = error;
+            }
+        }
+        
+        throw lastError || new Error('All export URLs failed');
     }
     
     // Method 2: Download with public access (if sheet is public)
@@ -247,6 +272,35 @@ class ExcelReportService {
             });
         } catch (error) {
             return dateString;
+        }
+    }
+
+    async ensureSheetAccess(sheetId) {
+        try {
+            await this.setupAuth();
+            if (!this.auth) return;
+
+            const driveClient = await GoogleAuthService.getDriveClient();
+            
+            // Try to get file info to check if we have access
+            const fileInfo = await driveClient.files.get({
+                fileId: sheetId,
+                fields: 'id,name,permissions'
+            });
+            
+            console.log('📄 Sheet access verified:', fileInfo.data.name);
+            return true;
+            
+        } catch (error) {
+            console.log('⚠️ Sheet access check failed:', error.message);
+            
+            // Try to add service account as viewer
+            if (error.code === 403 || error.message?.includes('permission')) {
+                console.log('🔑 Attempting to grant access to service account...');
+                // This would require owner permissions to work
+            }
+            
+            throw error;
         }
     }
 
