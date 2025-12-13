@@ -84,6 +84,17 @@ class PhoneRegistryService {
             console.log('📚 Google Sheets API response received');
             console.log(`📚 Response status: ${response.status}`);
             console.log(`📚 Response data:`, JSON.stringify(response.data, null, 2));
+            
+            // Additional debugging for Railway
+            console.log('🔍 === RAILWAY DEBUGGING ===');
+            console.log(`📊 Environment: ${process.env.NODE_ENV || 'unknown'}`);
+            console.log(`📊 Response has values: ${!!response.data.values}`);
+            console.log(`📊 Values length: ${response.data.values?.length || 0}`);
+            if (response.data.values && response.data.values.length > 0) {
+                console.log(`📊 First 3 rows:`, response.data.values.slice(0, 3));
+                console.log(`📊 Row with Ворис (should be row 1):`, response.data.values[1]);
+            }
+            console.log('🔍 === END RAILWAY DEBUGGING ===');
 
             const rows = response.data.values || [];
             console.log(`📚 Raw rows from sheet: ${rows.length} rows`);
@@ -146,6 +157,16 @@ class PhoneRegistryService {
             }
 
             console.log(`📚 Found ${phoneNumbers.length} phone numbers in directory`);
+            
+            // Debug why we might have 0 phones
+            if (phoneNumbers.length === 0) {
+                console.log('❌ === DEBUGGING 0 PHONE NUMBERS ===');
+                console.log(`📊 Total rows processed: ${rows.length}`);
+                console.log(`📊 Rows with data in column R: ${rows.filter(row => row[1]).length}`);
+                console.log(`📊 Sample non-empty R values:`, rows.filter(row => row[1]).slice(0, 5).map(row => row[1]));
+                console.log('❌ === END 0 PHONES DEBUG ===');
+            }
+            
             console.log('📚 All phone numbers in registry:');
             phoneNumbers.forEach((entry, index) => {
                 console.log(`  ${index + 1}. "${entry.clientName}" -> ${entry.originalValue} -> ${entry.normalized}`);
@@ -177,7 +198,10 @@ class PhoneRegistryService {
 
     // Check if a string looks like a phone number before processing
     isValidPhoneFormat(phoneStr) {
-        if (!phoneStr) return false;
+        if (!phoneStr) {
+            console.log(`📞 Invalid phone format: empty/null`);
+            return false;
+        }
         
         const digits = phoneStr.toString().replace(/\D/g, '');
         
@@ -189,9 +213,11 @@ class PhoneRegistryService {
         
         // Should not be sequential numbers like "1", "2", "3"... "42"
         if (digits.length <= 3 && /^[0-9]{1,3}$/.test(digits)) {
+            console.log(`📞 Invalid phone format: "${phoneStr}" (likely ID, not phone)`);
             return false; // These are likely IDs, not phone numbers
         }
         
+        console.log(`📞 Valid phone format: "${phoneStr}" (${digits.length} digits)`);
         return true;
     }
 
