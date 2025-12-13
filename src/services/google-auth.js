@@ -28,14 +28,79 @@ class GoogleAuthService {
                 'https://www.googleapis.com/auth/drive.readonly'
             ];
 
-            if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+            // Prioritize individual env vars since that's what Railway has
+            if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
+                console.log('📊 Using GOOGLE_PRIVATE_KEY + GOOGLE_SERVICE_ACCOUNT_EMAIL');
+                
+                try {
+                    // Extract project ID from email (format: name@project-id.iam.gserviceaccount.com)
+                    const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+                    const projectId = email.split('@')[1]?.split('.')[0] || 'bps-telegram-bot';
+                    
+                    // Clean up private key - handle different formats
+                    let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+                    
+                    // If the key has literal \n, replace with actual newlines
+                    if (privateKey.includes('\\n')) {
+                        privateKey = privateKey.replace(/\\n/g, '\n');
+                    }
+                    
+                    // Ensure proper formatting
+                    if (!privateKey.includes('\n')) {
+                        console.log('🔧 Formatting private key with proper newlines...');
+                        // Add newlines after header and before footer
+                        privateKey = privateKey
+                            .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
+                            .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----');
+                        
+                        // Add newlines every 64 characters for the key body
+                        const header = '-----BEGIN PRIVATE KEY-----\n';
+                        const footer = '\n-----END PRIVATE KEY-----';
+                        const keyBody = privateKey
+                            .replace(/-----BEGIN PRIVATE KEY-----\n?/g, '')
+                            .replace(/\n?-----END PRIVATE KEY-----/g, '')
+                            .replace(/\s/g, ''); // Remove any existing whitespace
+                        
+                        // Split into 64-char chunks
+                        const chunks = keyBody.match(/.{1,64}/g) || [];
+                        privateKey = header + chunks.join('\n') + footer;
+                    }
+                    
+                    const serviceAccount = {
+                        type: "service_account",
+                        project_id: projectId,
+                        private_key_id: "key-id-from-env",
+                        private_key: privateKey,
+                        client_email: email,
+                        client_id: email.split('@')[0],
+                        auth_uri: "https://accounts.google.com/o/oauth2/auth",
+                        token_uri: "https://oauth2.googleapis.com/token",
+                        auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs"
+                    };
+                    
+                    console.log('🔑 Service account email:', serviceAccount.client_email);
+                    console.log('🔑 Project ID:', serviceAccount.project_id);
+                    console.log('🔑 Private key length:', serviceAccount.private_key.length);
+                    console.log('🔑 Private key starts correctly:', serviceAccount.private_key.startsWith('-----BEGIN PRIVATE KEY-----'));
+                    console.log('🔑 Private key ends correctly:', serviceAccount.private_key.endsWith('-----END PRIVATE KEY-----'));
+                    
+                    this.auth = new google.auth.GoogleAuth({
+                        credentials: serviceAccount,
+                        scopes: scopes
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ Error creating service account from env vars:', error.message);
+                    throw error;
+                }
+                
+            } else if (process.env.GOOGLE_SERVICE_ACCOUNT) {
                 console.log('📊 Using GOOGLE_SERVICE_ACCOUNT JSON credentials');
                 
                 try {
                     const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
                     console.log('🔑 Service account email:', credentials.client_email);
                     console.log('🔑 Project ID:', credentials.project_id);
-                    console.log('🔑 Has private key:', !!credentials.private_key);
                     
                     this.auth = new google.auth.GoogleAuth({
                         credentials: credentials,
@@ -46,30 +111,6 @@ class GoogleAuthService {
                     console.error('❌ Failed to parse GOOGLE_SERVICE_ACCOUNT JSON:', parseError.message);
                     throw new Error(`Invalid GOOGLE_SERVICE_ACCOUNT JSON: ${parseError.message}`);
                 }
-                
-            } else if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
-                console.log('📊 Using individual environment variables');
-                
-                // Create service account object from environment variables
-                const serviceAccount = {
-                    type: "service_account",
-                    project_id: "bps-telegram-bot",
-                    private_key_id: "dummy-key-id",
-                    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-                    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-                    client_id: "dummy-client-id",
-                    auth_uri: "https://accounts.google.com/o/oauth2/auth",
-                    token_uri: "https://oauth2.googleapis.com/token",
-                    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs"
-                };
-                
-                console.log('🔑 Service account email:', serviceAccount.client_email);
-                console.log('🔑 Private key length:', serviceAccount.private_key.length);
-                
-                this.auth = new google.auth.GoogleAuth({
-                    credentials: serviceAccount,
-                    scopes: scopes
-                });
                 
             } else {
                 console.log('❌ No Google credentials found!');
