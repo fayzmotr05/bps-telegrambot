@@ -84,10 +84,9 @@ class ExcelReportService {
             return this.generateTextFallback(reportData, phoneNumber, fromDate, toDate, clientName);
         }
         
-        } catch (error) {
-            console.error('❌ Error in Excel report generation:', error);
-            return this.generateTextFallback(reportData, phoneNumber, fromDate, toDate, clientName);
-        }
+    } catch (error) {
+        console.error('❌ Error in Excel report generation:', error);
+        return this.generateTextFallback(reportData, phoneNumber, fromDate, toDate, clientName);
     }
 
     async getAccessToken() {
