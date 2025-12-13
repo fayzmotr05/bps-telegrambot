@@ -505,6 +505,24 @@ app.get('/', (req, res) => {
   });
 });
 
+// Debug endpoint to check Google credentials
+app.get('/debug/google', (req, res) => {
+  const GoogleAuthService = require('./services/google-auth');
+  
+  res.status(200).json({
+    message: 'Google Credentials Debug',
+    environment: {
+      GOOGLE_SERVICE_ACCOUNT: !!process.env.GOOGLE_SERVICE_ACCOUNT,
+      GOOGLE_PRIVATE_KEY: !!process.env.GOOGLE_PRIVATE_KEY,
+      GOOGLE_SERVICE_ACCOUNT_EMAIL: !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      GOOGLE_SERVICE_ACCOUNT_length: process.env.GOOGLE_SERVICE_ACCOUNT?.length || 0,
+      GOOGLE_PRIVATE_KEY_length: process.env.GOOGLE_PRIVATE_KEY?.length || 0,
+      GOOGLE_SERVICE_ACCOUNT_EMAIL_value: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || 'not set'
+    },
+    auth_status: GoogleAuthService.isAvailable() ? 'initialized' : 'not_initialized'
+  });
+});
+
 // Start Express server FIRST (for health checks)
 app.listen(PORT, HOST, () => {
   console.log(`🌐 Health server running on ${HOST}:${PORT}`);

@@ -31,14 +31,21 @@ class GoogleAuthService {
             if (process.env.GOOGLE_SERVICE_ACCOUNT) {
                 console.log('📊 Using GOOGLE_SERVICE_ACCOUNT JSON credentials');
                 
-                const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-                console.log('🔑 Service account email:', credentials.client_email);
-                console.log('🔑 Project ID:', credentials.project_id);
-                
-                this.auth = new google.auth.GoogleAuth({
-                    credentials: credentials,
-                    scopes: scopes
-                });
+                try {
+                    const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+                    console.log('🔑 Service account email:', credentials.client_email);
+                    console.log('🔑 Project ID:', credentials.project_id);
+                    console.log('🔑 Has private key:', !!credentials.private_key);
+                    
+                    this.auth = new google.auth.GoogleAuth({
+                        credentials: credentials,
+                        scopes: scopes
+                    });
+                    
+                } catch (parseError) {
+                    console.error('❌ Failed to parse GOOGLE_SERVICE_ACCOUNT JSON:', parseError.message);
+                    throw new Error(`Invalid GOOGLE_SERVICE_ACCOUNT JSON: ${parseError.message}`);
+                }
                 
             } else if (process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) {
                 console.log('📊 Using individual environment variables');
@@ -94,18 +101,32 @@ class GoogleAuthService {
      * Test authentication by making a simple API call
      */
     async testAuthentication() {
-        if (!this.auth) {
-            throw new Error('Auth not initialized');
-        }
+        try {
+            if (!this.auth) {
+                throw new Error('Auth not initialized');
+            }
 
-        const accessToken = await this.getAccessToken();
-        
-        if (!accessToken) {
-            throw new Error('Failed to get access token');
+            console.log('🧪 Testing authentication...');
+            const accessToken = await this.getAccessToken();
+            
+            if (!accessToken) {
+                throw new Error('Failed to get access token - token is null/undefined');
+            }
+            
+            console.log('🔑 Authentication test successful');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Authentication test failed:');
+            console.error('  - Error type:', error.constructor.name);
+            console.error('  - Error message:', error.message);
+            console.error('  - Error code:', error.code);
+            if (error.response) {
+                console.error('  - Response status:', error.response.status);
+                console.error('  - Response data:', JSON.stringify(error.response.data, null, 2));
+            }
+            throw new Error(`Failed to get access token`);
         }
-        
-        console.log('🔑 Authentication test successful');
-        return true;
     }
 
     /**
