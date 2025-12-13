@@ -92,9 +92,17 @@ contactReportScene.action('date_today', async (ctx) => {
     try {
         await ctx.answerCbQuery();
         
+        // Use Uzbekistan timezone (UTC+5)
         const today = new Date();
-        const fromDate = today.toISOString().split('T')[0];
+        const uzbekistanTime = new Date(today.getTime() + (5 * 60 * 60 * 1000)); // UTC+5
+        const fromDate = uzbekistanTime.toISOString().split('T')[0];
         const toDate = fromDate;
+        
+        console.log('📅 Date calculation:', {
+            serverTime: today.toISOString(),
+            uzbekistanTime: uzbekistanTime.toISOString(),
+            selectedDate: fromDate
+        });
         
         // Use phone number from registered user or pending phone number
         const phoneNumber = ctx.session.registeredUser ? 
