@@ -192,16 +192,32 @@ class DailyAutomationService {
             
             console.log(`🔍 Checking ${reportData.rawData.length} rows from fresh sheet data`);
             
+            // Print first 15 rows to debug what's actually in the sheet
+            console.log('🔍 First 15 rows of sheet data after inputting phone and date:');
+            for (let i = 0; i < Math.min(15, reportData.rawData.length); i++) {
+                const row = reportData.rawData[i];
+                console.log(`🔍 Row ${i + 1}:`, row ? row.slice(0, 8) : 'empty');
+            }
+            
             // Check A8 cell content (row 8, column A = index [7][0])
             const row8 = reportData.rawData[7];
             const a8Content = row8 && row8[0] ? row8[0].toString() : '';
             
             console.log(`🔍 A8 cell content: "${a8Content}"`);
+            console.log(`🔍 A8 cell type: ${typeof a8Content}`);
+            console.log(`🔍 A8 cell length: ${a8Content.length}`);
+            
+            // Also check surrounding cells for context
+            if (row8) {
+                console.log(`🔍 Row 8 (A8-H8):`, row8.slice(0, 8));
+            }
             
             // Check if A8 contains "zero" or "no orders" message
             const hasNoOrders = a8Content.includes('Покупок за указанный период не найдено') || 
                                a8Content.toLowerCase().includes('zero') || 
                                a8Content.trim() === '0';
+            
+            console.log(`🔍 hasNoOrders check result: ${hasNoOrders}`);
             
             if (hasNoOrders) {
                 console.log('❌ No orders found (A8 indicates zero/no orders)');
