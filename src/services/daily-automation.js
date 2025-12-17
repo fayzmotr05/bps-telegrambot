@@ -182,7 +182,7 @@ class DailyAutomationService {
         try {
             console.log(`🔍 Checking orders for ${phoneNumber} on ${dateStr} directly from sheet...`);
             
-            // Get fresh report data by actually inputting the phone number 
+            // Get fresh report data by actually inputting the phone number AND today's date
             const reportData = await PhoneRegistryService.getTodaysReportData(phoneNumber, dateStr);
             
             if (!reportData || !reportData.rawData) {
@@ -192,71 +192,24 @@ class DailyAutomationService {
             
             console.log(`🔍 Checking ${reportData.rawData.length} rows from fresh sheet data`);
             
-            // Print first few rows to debug
-            console.log('🔍 First 10 rows of sheet data:');
-            for (let i = 0; i < Math.min(10, reportData.rawData.length); i++) {
-                const row = reportData.rawData[i];
-                console.log(`🔍 Row ${i + 1}:`, row ? row.slice(0, 5) : 'empty');
-            }
+            // Check A8 cell content (row 8, column A = index [7][0])
+            const row8 = reportData.rawData[7];
+            const a8Content = row8 && row8[0] ? row8[0].toString() : '';
             
-            // Check if there's actual client data in row 1-2
-            let hasClientData = false;
-            if (reportData.rawData.length > 0) {
-                const row1 = reportData.rawData[0];
-                const row2 = reportData.rawData[1];
-                
-                // Row 1 should have phone number
-                if (row1 && row1[1] && row1[1].toString().includes(phoneNumber.slice(-8))) {
-                    console.log('✅ Found phone number in row 1');
-                    hasClientData = true;
-                }
-                
-                // Row 2 should have client name and dates
-                if (row2 && row2.length >= 3 && row2[1] && row2[2] === dateStr) {
-                    console.log('✅ Found client data and correct date in row 2');
-                    hasClientData = true;
-                }
-            }
+            console.log(`🔍 A8 cell content: "${a8Content}"`);
             
-            if (!hasClientData) {
-                console.log('❌ No client data found in first rows');
+            // Check if A8 contains "zero" or "no orders" message
+            const hasNoOrders = a8Content.includes('Покупок за указанный период не найдено') || 
+                               a8Content.toLowerCase().includes('zero') || 
+                               a8Content.trim() === '0';
+            
+            if (hasNoOrders) {
+                console.log('❌ No orders found (A8 indicates zero/no orders)');
                 return false;
             }
             
-            // Check for actual purchase data (look for data beyond row 7)
-            let hasOrderData = false;
-            
-            // Look for order data in rows after the headers
-            for (let i = 8; i < reportData.rawData.length; i++) {
-                const row = reportData.rawData[i];
-                if (row && row.length > 2) {
-                    // Check if this row has actual order data (date, product, amount, etc.)
-                    let hasData = false;
-                    for (let j = 0; j < row.length; j++) {
-                        if (row[j] && row[j].toString().trim() !== '' && 
-                            !row[j].toString().includes('Покупок за указанный период не найдено')) {
-                            hasData = true;
-                            break;
-                        }
-                    }
-                    if (hasData) {
-                        console.log(`✅ Found order data in row ${i + 1}:`, row.slice(0, 5));
-                        hasOrderData = true;
-                        break;
-                    }
-                }
-            }
-            
-            // IMPORTANT FIX: If we have valid client data (phone number and dates match),
-            // consider this as having orders even if A8 says "no orders found"
-            // because the data was successfully retrieved after inputting phone + date
-            if (hasClientData) {
-                console.log('✅ Orders found (has valid client data with matching phone and date)');
-                return true;
-            }
-            
-            console.log('❌ No valid client data or orders found');
-            return false;
+            console.log('✅ Orders found (A8 does not indicate zero/no orders)');
+            return true;
             
         } catch (error) {
             console.error('❌ Error checking orders from sheet:', error.message);
