@@ -26,6 +26,9 @@ const { initNotifications, testGroupConnection, getGroupChatId } = require('./ut
 // Import automation services
 const DailyAutomationService = require('./services/daily-automation');
 
+// Global automation instance
+let dailyAutomationInstance = null;
+
 // Validate environment
 if (!process.env.BOT_TOKEN) {
   console.error('❌ BOT_TOKEN is required');
@@ -288,6 +291,29 @@ bot.action('back_to_menu', async (ctx) => {
   }
   await showMainMenu(ctx);
   await ctx.answerCbQuery();
+});
+
+// Test command for manual automation trigger
+bot.command('test_automation', async (ctx) => {
+  console.log('🧪 Test automation command received from user:', ctx.from.id);
+  
+  if (!dailyAutomationInstance) {
+    await ctx.reply('❌ Automation service not available');
+    console.log('❌ Automation instance not found');
+    return;
+  }
+  
+  await ctx.reply('🧪 Starting manual automation test...');
+  console.log('🧪 Starting manual automation test...');
+  
+  try {
+    await dailyAutomationInstance.triggerDailyReports();
+    await ctx.reply('✅ Automation test completed! Check logs for results.');
+    console.log('✅ Automation test completed successfully');
+  } catch (error) {
+    console.error('❌ Manual automation test failed:', error);
+    await ctx.reply(`❌ Test failed: ${error.message}`);
+  }
 });
 
 // Admin panel callbacks
@@ -566,11 +592,10 @@ async function startBot() {
     }
     
     // Initialize daily automation service
-    let dailyAutomation = null;
     if (dbReady) {
       try {
-        dailyAutomation = new DailyAutomationService(bot);
-        dailyAutomation.init();
+        dailyAutomationInstance = new DailyAutomationService(bot);
+        dailyAutomationInstance.init();
         console.log('📅 Daily automation service initialized');
       } catch (error) {
         console.log('⚠️ Daily automation failed to initialize:', error.message);
@@ -579,23 +604,6 @@ async function startBot() {
       console.log('📅 Daily automation disabled - database not ready');
     }
 
-    // Test command for manual automation trigger
-    bot.command('test_automation', async (ctx) => {
-      if (!dailyAutomation) {
-        await ctx.reply('❌ Automation service not available');
-        return;
-      }
-      
-      await ctx.reply('🧪 Starting manual automation test...');
-      
-      try {
-        await dailyAutomation.triggerDailyReports();
-        await ctx.reply('✅ Automation test completed! Check logs for results.');
-      } catch (error) {
-        console.error('❌ Manual automation test failed:', error);
-        await ctx.reply(`❌ Test failed: ${error.message}`);
-      }
-    });
     
     // Test group connections if configured
     if (process.env.ORDERS_GROUP_ID) {
