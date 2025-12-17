@@ -128,11 +128,11 @@ class DailyAutomationService {
                 return 'skipped'; // Skip user - no data means no orders
             }
 
-            // Check if user has orders by looking at cell A8
-            const hasOrders = await this.checkUserHasOrders(reportData);
+            // Check if user has orders by looking at the actual sheet data 
+            const hasOrders = await this.checkUserHasOrdersFromSheet(user.phone_number, dateStr);
             
             if (!hasOrders) {
-                console.log(`📭 No orders found for ${user.phone_number} on ${dateStr} (A8 check)`);
+                console.log(`📭 No orders found for ${user.phone_number} on ${dateStr} (sheet check)`);
                 return 'skipped'; // Skip user - no orders today
             }
             
@@ -177,61 +177,56 @@ class DailyAutomationService {
         }
     }
 
-    // Check if user has orders by examining A8 cell content
-    async checkUserHasOrders(reportData) {
+    // Check if user has orders by directly checking the sheet
+    async checkUserHasOrdersFromSheet(phoneNumber, dateStr) {
         try {
-            // Check if the report data contains the "no orders" message in A8
+            console.log(`🔍 Checking orders for ${phoneNumber} on ${dateStr} directly from sheet...`);
+            
+            // Get fresh report data by actually inputting the phone number 
+            const reportData = await PhoneRegistryService.getTodaysReportData(phoneNumber, dateStr);
+            
+            if (!reportData || !reportData.rawData) {
+                console.log('❌ No sheet data returned');
+                return false;
+            }
+            
             const noOrdersMessage = "Покупок за указанный период не найдено";
+            console.log(`🔍 Checking ${reportData.rawData.length} rows from fresh sheet data`);
             
-            console.log('🔍 Checking for orders in report data...');
-            console.log('🔍 Report data structure:', Object.keys(reportData || {}));
-            
-            // Look through the raw sheet data for this message
-            if (reportData.rawData && Array.isArray(reportData.rawData)) {
-                console.log(`🔍 Checking ${reportData.rawData.length} rows for "no orders" message`);
-                
-                // Check row 8 (index 7) for the "no orders" message
-                const row8 = reportData.rawData[7]; // A8 is row 8, column 1
-                console.log('🔍 Row 8 content:', row8);
-                
+            // Check row 8 (index 7) first - this is where the message typically appears
+            if (reportData.rawData.length > 7) {
+                const row8 = reportData.rawData[7];
                 if (row8 && row8[0]) {
                     const cellA8 = row8[0].toString();
                     console.log('🔍 A8 cell content:', cellA8);
                     
                     if (cellA8.includes(noOrdersMessage)) {
                         console.log('❌ No orders found (A8 contains "no orders" message)');
-                        return false; // No orders found
-                    }
-                }
-                
-                // Also check other rows for the message (in case it's not exactly in A8)
-                for (let i = 5; i < Math.min(15, reportData.rawData.length); i++) {
-                    const row = reportData.rawData[i];
-                    if (row && row[0] && row[0].toString().includes(noOrdersMessage)) {
-                        console.log(`❌ No orders found (found "no orders" message in row ${i + 1})`);
                         return false;
                     }
                 }
-                
-                console.log('✅ Orders found (no "no orders" message detected)');
-                return true;
             }
             
-            console.log('⚠️ No rawData found, checking calculatedData...');
-            
-            // Fallback: check if calculatedData is empty or minimal
-            if (!reportData.calculatedData || Object.keys(reportData.calculatedData).length === 0) {
-                console.log('❌ No orders found (empty calculatedData)');
-                return false;
+            // Also scan other rows around A8 for the message
+            for (let i = 5; i < Math.min(15, reportData.rawData.length); i++) {
+                const row = reportData.rawData[i];
+                if (row && row.length > 0) {
+                    for (let j = 0; j < Math.min(3, row.length); j++) {
+                        if (row[j] && row[j].toString().includes(noOrdersMessage)) {
+                            console.log(`❌ No orders found (found message in row ${i + 1}, col ${j + 1})`);
+                            return false;
+                        }
+                    }
+                }
             }
             
-            console.log('✅ Orders found (has calculatedData)');
+            console.log('✅ Orders found (no "no orders" message detected in sheet)');
             return true;
             
         } catch (error) {
-            console.error('❌ Error checking orders:', error.message);
-            // If there's an error checking, assume there are orders to be safe
-            return true;
+            console.error('❌ Error checking orders from sheet:', error.message);
+            // If there's an error, be conservative and skip the user
+            return false;
         }
     }
 
