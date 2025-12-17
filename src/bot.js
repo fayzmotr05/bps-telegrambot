@@ -348,6 +348,44 @@ bot.command('clear_phones', async (ctx) => {
   }
 });
 
+// Test single user report
+bot.command('test_report', async (ctx) => {
+  console.log('📊 Test report command received from user:', ctx.from.id);
+  
+  try {
+    await ctx.reply('📊 Testing report generation...');
+    
+    const UserRegistryService = require('./services/user-registry');
+    const user = await UserRegistryService.getUserByTelegramId(ctx.from.id);
+    
+    if (!user) {
+      await ctx.reply('❌ You are not registered. Please register your phone first.');
+      return;
+    }
+    
+    const DailyAutomationService = require('./services/daily-automation');
+    const automation = new DailyAutomationService(bot);
+    
+    const today = new Date();
+    const uzbekistanTime = new Date(today.getTime() + (5 * 60 * 60 * 1000));
+    const todayStr = uzbekistanTime.toISOString().split('T')[0];
+    
+    console.log(`📊 Testing report for user ${user.phone_number} on ${todayStr}`);
+    
+    const result = await automation.sendDailyReportToUser(user, todayStr);
+    
+    if (result === 'skipped') {
+      await ctx.reply('📭 No orders found for today - report skipped.');
+    } else {
+      await ctx.reply('✅ Test report completed!');
+    }
+    
+  } catch (error) {
+    console.error('❌ Test report error:', error);
+    await ctx.reply(`❌ Error: ${error.message}`);
+  }
+});
+
 // Admin panel callbacks
 bot.action('admin_panel', async (ctx) => {
   await showAdminPanel(ctx);
