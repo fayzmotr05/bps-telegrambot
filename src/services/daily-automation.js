@@ -14,8 +14,8 @@ class DailyAutomationService {
     init() {
         console.log('📅 Initializing daily automation service...');
         
-        // Schedule daily reports at 11:50 PM every day (end of day)
-        cron.schedule('50 23 * * *', () => {
+        // Schedule daily reports at 11:55 AM every day
+        cron.schedule('55 11 * * *', () => {
             this.sendDailyReports();
         }, {
             scheduled: true,
@@ -27,7 +27,7 @@ class DailyAutomationService {
         //     this.sendDailyReports();
         // });
 
-        console.log('✅ Daily automation scheduled for 11:50 PM (Tashkent time)');
+        console.log('✅ Daily automation scheduled for 11:55 AM (Tashkent time)');
     }
 
     // Send daily reports to all registered users
@@ -51,19 +51,47 @@ class DailyAutomationService {
                 return;
             }
 
+            // Use Uzbekistan timezone (UTC+5) for correct date
             const today = new Date();
-            const todayStr = today.toISOString().split('T')[0];
+            const uzbekistanTime = new Date(today.getTime() + (5 * 60 * 60 * 1000)); // UTC+5
+            const todayStr = uzbekistanTime.toISOString().split('T')[0];
+            
+            console.log('📅 Automation date calculation:', {
+                serverTime: today.toISOString(),
+                uzbekistanTime: uzbekistanTime.toISOString(),
+                selectedDate: todayStr
+            });
+            
             let successCount = 0;
             let errorCount = 0;
+            let skippedCount = 0;
+
+            // Calculate delay based on user count (aim to complete within 30 minutes)
+            const totalUsers = registeredUsers.length;
+            const maxTimeMinutes = 30;
+            const estimatedTimePerUser = 10; // seconds (data check + Excel generation + sending)
+            const baseDelay = Math.max(1000, Math.min(10000, (maxTimeMinutes * 60 * 1000) / totalUsers - estimatedTimePerUser * 1000));
+            
+            console.log(`⏱️ Calculated delay: ${baseDelay}ms for ${totalUsers} users (max ${maxTimeMinutes} min)`);
 
             // Process each user
-            for (const user of registeredUsers) {
+            for (let i = 0; i < registeredUsers.length; i++) {
+                const user = registeredUsers[i];
                 try {
-                    await this.sendDailyReportToUser(user, todayStr);
-                    successCount++;
+                    const result = await this.sendDailyReportToUser(user, todayStr);
                     
-                    // Add delay to avoid rate limiting
-                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    if (result === 'skipped') {
+                        skippedCount++;
+                        console.log(`⏭️ Skipped ${user.phone_number} (no orders)`);
+                    } else {
+                        successCount++;
+                        console.log(`✅ Sent to ${user.phone_number} (${i + 1}/${totalUsers})`);
+                    }
+                    
+                    // Add calculated delay between users
+                    if (i < registeredUsers.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, baseDelay));
+                    }
                     
                 } catch (error) {
                     console.error(`❌ Failed to send daily report to ${user.phone_number}:`, error.message);
@@ -74,7 +102,7 @@ class DailyAutomationService {
                 }
             }
 
-            console.log(`📊 Daily reports completed: ${successCount} success, ${errorCount} errors`);
+            console.log(`📊 Daily reports completed: ${successCount} sent, ${skippedCount} skipped (no orders), ${errorCount} errors`);
 
         } catch (error) {
             console.error('❌ Daily reports automation error:', error);
@@ -97,15 +125,18 @@ class DailyAutomationService {
 
             if (!reportData || Object.keys(reportData.calculatedData || {}).length === 0) {
                 console.log(`📭 No data found for ${user.phone_number} on ${dateStr}`);
-                
-                // Send "no data" message
-                const lang = user.language_code || 'uz';
-                const noDataMessage = getMessage('dailyReports.noDataToday', lang) || 
-                    `📭 Bugun ${dateStr} sana uchun ma'lumotlar topilmadi.`;
-                
-                await this.bot.telegram.sendMessage(user.telegram_id, noDataMessage);
-                return;
+                return 'skipped'; // Skip user - no data means no orders
             }
+
+            // Check if user has orders by looking at cell A8
+            const hasOrders = await this.checkUserHasOrders(reportData);
+            
+            if (!hasOrders) {
+                console.log(`📭 No orders found for ${user.phone_number} on ${dateStr} (A8 check)`);
+                return 'skipped'; // Skip user - no orders today
+            }
+            
+            console.log(`📦 Orders found for ${user.phone_number}, sending report...`);
 
             // Generate Excel report with client name
             const language = user.language_code || 'uz';
@@ -135,6 +166,7 @@ class DailyAutomationService {
             await ExcelReportService.cleanup(excelPath);
 
             console.log(`✅ Daily report sent successfully to ${user.phone_number}`);
+            return 'sent';
 
         } catch (error) {
             console.error(`❌ Error sending daily report to user ${user.phone_number}:`, error);
@@ -142,6 +174,31 @@ class DailyAutomationService {
         } finally {
             // Always clean up the report data
             await PhoneRegistryService.cleanupReportData();
+        }
+    }
+
+    // Check if user has orders by examining A8 cell content
+    async checkUserHasOrders(reportData) {
+        try {
+            // Check if the report data contains the "no orders" message in A8
+            const noOrdersMessage = "Покупок за указанный период не найдено";
+            
+            // Look through the sheet data for this message
+            if (reportData.sheetData && Array.isArray(reportData.sheetData)) {
+                // Check row 8 (index 7) for the "no orders" message
+                const row8 = reportData.sheetData[7]; // A8 is row 8, column 1
+                if (row8 && row8[0] && row8[0].includes(noOrdersMessage)) {
+                    return false; // No orders found
+                }
+            }
+            
+            // If we can't find the "no orders" message, assume there are orders
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error checking orders in A8:', error.message);
+            // If there's an error checking, assume there are orders to be safe
+            return true;
         }
     }
 
@@ -188,7 +245,7 @@ class DailyAutomationService {
     getStatus() {
         return {
             isRunning: this.isRunning,
-            nextRun: 'Daily at 11:50 PM (Tashkent time)',
+            nextRun: 'Daily at 11:55 AM (Tashkent time)',
             timezone: 'Asia/Tashkent'
         };
     }
