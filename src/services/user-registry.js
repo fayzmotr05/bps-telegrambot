@@ -113,6 +113,57 @@ class UserRegistryService {
             return false;
         }
     }
+
+    // Clear all user phone registrations
+    async clearAllRegistrations() {
+        try {
+            console.log('🗑️ Clearing all user phone registrations...');
+            
+            // Get count before deletion
+            const countBefore = await db.query('SELECT COUNT(*) as count FROM user_phones');
+            const beforeCount = countBefore[0]?.count || 0;
+            
+            // Delete all records
+            await db.query('DELETE FROM user_phones');
+            
+            console.log(`🗑️ Cleared ${beforeCount} phone registrations`);
+            
+            return {
+                success: true,
+                clearedCount: beforeCount
+            };
+            
+        } catch (error) {
+            console.error('❌ Error clearing registrations:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Clear specific user registration
+    async clearUserRegistration(telegramId) {
+        try {
+            console.log(`🗑️ Clearing registration for user ${telegramId}...`);
+            
+            const result = await db.query('DELETE FROM user_phones WHERE telegram_id = ?', [telegramId]);
+            
+            console.log(`🗑️ Cleared registration for user ${telegramId}`);
+            
+            return {
+                success: true,
+                clearedCount: result.affectedRows || 0
+            };
+            
+        } catch (error) {
+            console.error('❌ Error clearing user registration:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
 }
 
 module.exports = new UserRegistryService();

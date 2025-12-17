@@ -325,6 +325,29 @@ bot.command('test_automation', async (ctx) => {
   }
 });
 
+// Clear phone registrations command
+bot.command('clear_phones', async (ctx) => {
+  console.log('🗑️ Clear phones command received from user:', ctx.from.id);
+  
+  try {
+    await ctx.reply('🗑️ Clearing all phone registrations...');
+    
+    const UserRegistryService = require('./services/user-registry');
+    const result = await UserRegistryService.clearAllRegistrations();
+    
+    if (result.success) {
+      await ctx.reply(`✅ Successfully cleared ${result.clearedCount} phone registrations. Users will need to register again.`);
+      console.log(`✅ Cleared ${result.clearedCount} phone registrations`);
+    } else {
+      await ctx.reply(`❌ Failed to clear registrations: ${result.error}`);
+      console.error('❌ Failed to clear registrations:', result.error);
+    }
+  } catch (error) {
+    console.error('❌ Clear phones command error:', error);
+    await ctx.reply(`❌ Error: ${error.message}`);
+  }
+});
+
 // Admin panel callbacks
 bot.action('admin_panel', async (ctx) => {
   await showAdminPanel(ctx);
