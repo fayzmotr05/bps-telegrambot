@@ -193,31 +193,59 @@ class DailyAutomationService {
             const noOrdersMessage = "Покупок за указанный период не найдено";
             console.log(`🔍 Checking ${reportData.rawData.length} rows from fresh sheet data`);
             
+            // Print first few rows to debug
+            console.log('🔍 First 10 rows of sheet data:');
+            for (let i = 0; i < Math.min(10, reportData.rawData.length); i++) {
+                const row = reportData.rawData[i];
+                console.log(`🔍 Row ${i + 1}:`, row ? row.slice(0, 5) : 'empty');
+            }
+            
             // Check row 8 (index 7) first - this is where the message typically appears
             if (reportData.rawData.length > 7) {
                 const row8 = reportData.rawData[7];
+                console.log('🔍 Full Row 8:', row8);
                 if (row8 && row8[0]) {
                     const cellA8 = row8[0].toString();
-                    console.log('🔍 A8 cell content:', cellA8);
+                    console.log('🔍 A8 cell content:', `"${cellA8}"`);
+                    console.log('🔍 A8 cell length:', cellA8.length);
+                    console.log('🔍 Looking for message:', `"${noOrdersMessage}"`);
                     
                     if (cellA8.includes(noOrdersMessage)) {
                         console.log('❌ No orders found (A8 contains "no orders" message)');
                         return false;
+                    } else {
+                        console.log('✅ A8 does not contain "no orders" message');
                     }
+                } else {
+                    console.log('🔍 A8 cell is empty');
                 }
+            } else {
+                console.log('🔍 Sheet has less than 8 rows');
             }
             
-            // Also scan other rows around A8 for the message
+            // Check calculatedData as additional verification
+            console.log('🔍 CalculatedData keys:', Object.keys(reportData.calculatedData || {}));
+            console.log('🔍 CalculatedData:', reportData.calculatedData);
+            
+            // Only scan other rows if A8 was empty or unclear
+            let foundNoOrdersMessage = false;
             for (let i = 5; i < Math.min(15, reportData.rawData.length); i++) {
                 const row = reportData.rawData[i];
                 if (row && row.length > 0) {
                     for (let j = 0; j < Math.min(3, row.length); j++) {
                         if (row[j] && row[j].toString().includes(noOrdersMessage)) {
-                            console.log(`❌ No orders found (found message in row ${i + 1}, col ${j + 1})`);
-                            return false;
+                            console.log(`❌ Found "no orders" message in row ${i + 1}, col ${j + 1}: "${row[j]}"`);
+                            foundNoOrdersMessage = true;
+                            break;
                         }
                     }
                 }
+                if (foundNoOrdersMessage) break;
+            }
+            
+            if (foundNoOrdersMessage) {
+                console.log('❌ No orders found (found "no orders" message in sheet)');
+                return false;
             }
             
             console.log('✅ Orders found (no "no orders" message detected in sheet)');
