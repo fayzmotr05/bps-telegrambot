@@ -566,9 +566,10 @@ async function startBot() {
     }
     
     // Initialize daily automation service
+    let dailyAutomation = null;
     if (dbReady) {
       try {
-        const dailyAutomation = new DailyAutomationService(bot);
+        dailyAutomation = new DailyAutomationService(bot);
         dailyAutomation.init();
         console.log('📅 Daily automation service initialized');
       } catch (error) {
@@ -577,6 +578,24 @@ async function startBot() {
     } else {
       console.log('📅 Daily automation disabled - database not ready');
     }
+
+    // Test command for manual automation trigger
+    bot.command('test_automation', async (ctx) => {
+      if (!dailyAutomation) {
+        await ctx.reply('❌ Automation service not available');
+        return;
+      }
+      
+      await ctx.reply('🧪 Starting manual automation test...');
+      
+      try {
+        await dailyAutomation.triggerDailyReports();
+        await ctx.reply('✅ Automation test completed! Check logs for results.');
+      } catch (error) {
+        console.error('❌ Manual automation test failed:', error);
+        await ctx.reply(`❌ Test failed: ${error.message}`);
+      }
+    });
     
     // Test group connections if configured
     if (process.env.ORDERS_GROUP_ID) {
