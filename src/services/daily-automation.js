@@ -183,20 +183,53 @@ class DailyAutomationService {
             // Check if the report data contains the "no orders" message in A8
             const noOrdersMessage = "Покупок за указанный период не найдено";
             
-            // Look through the sheet data for this message
-            if (reportData.sheetData && Array.isArray(reportData.sheetData)) {
+            console.log('🔍 Checking for orders in report data...');
+            console.log('🔍 Report data structure:', Object.keys(reportData || {}));
+            
+            // Look through the raw sheet data for this message
+            if (reportData.rawData && Array.isArray(reportData.rawData)) {
+                console.log(`🔍 Checking ${reportData.rawData.length} rows for "no orders" message`);
+                
                 // Check row 8 (index 7) for the "no orders" message
-                const row8 = reportData.sheetData[7]; // A8 is row 8, column 1
-                if (row8 && row8[0] && row8[0].includes(noOrdersMessage)) {
-                    return false; // No orders found
+                const row8 = reportData.rawData[7]; // A8 is row 8, column 1
+                console.log('🔍 Row 8 content:', row8);
+                
+                if (row8 && row8[0]) {
+                    const cellA8 = row8[0].toString();
+                    console.log('🔍 A8 cell content:', cellA8);
+                    
+                    if (cellA8.includes(noOrdersMessage)) {
+                        console.log('❌ No orders found (A8 contains "no orders" message)');
+                        return false; // No orders found
+                    }
                 }
+                
+                // Also check other rows for the message (in case it's not exactly in A8)
+                for (let i = 5; i < Math.min(15, reportData.rawData.length); i++) {
+                    const row = reportData.rawData[i];
+                    if (row && row[0] && row[0].toString().includes(noOrdersMessage)) {
+                        console.log(`❌ No orders found (found "no orders" message in row ${i + 1})`);
+                        return false;
+                    }
+                }
+                
+                console.log('✅ Orders found (no "no orders" message detected)');
+                return true;
             }
             
-            // If we can't find the "no orders" message, assume there are orders
+            console.log('⚠️ No rawData found, checking calculatedData...');
+            
+            // Fallback: check if calculatedData is empty or minimal
+            if (!reportData.calculatedData || Object.keys(reportData.calculatedData).length === 0) {
+                console.log('❌ No orders found (empty calculatedData)');
+                return false;
+            }
+            
+            console.log('✅ Orders found (has calculatedData)');
             return true;
             
         } catch (error) {
-            console.error('❌ Error checking orders in A8:', error.message);
+            console.error('❌ Error checking orders:', error.message);
             // If there's an error checking, assume there are orders to be safe
             return true;
         }
