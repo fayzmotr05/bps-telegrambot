@@ -296,11 +296,20 @@ bot.action('back_to_menu', async (ctx) => {
 // Test command for manual automation trigger
 bot.command('test_automation', async (ctx) => {
   console.log('🧪 Test automation command received from user:', ctx.from.id);
+  console.log('🧪 Automation instance status:', !!dailyAutomationInstance);
   
+  // Try to initialize automation if it doesn't exist
   if (!dailyAutomationInstance) {
-    await ctx.reply('❌ Automation service not available');
-    console.log('❌ Automation instance not found');
-    return;
+    console.log('🧪 Attempting to initialize automation service...');
+    try {
+      dailyAutomationInstance = new DailyAutomationService(bot);
+      dailyAutomationInstance.init();
+      console.log('🧪 Automation service initialized for test');
+    } catch (error) {
+      await ctx.reply(`❌ Failed to initialize automation: ${error.message}`);
+      console.error('❌ Failed to initialize automation for test:', error);
+      return;
+    }
   }
   
   await ctx.reply('🧪 Starting manual automation test...');
